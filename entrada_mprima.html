@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Entrada de Matéria Prima</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&display=swap');
+
+  :root {
+    --bg: #f5f2eb;
+    --surface: #ffffff;
+    --border: #d6d0c4;
+    --text: #1a1a18;
+    --text-muted: #7a7568;
+    --accent: #2d6a4f;
+    --accent-light: #e8f5ef;
+    --accent2: #e76f51;
+    --danger: #c1440e;
+    --danger-light: #fdf0ec;
+    --input-bg: #faf9f6;
+    --shadow: 0 2px 12px rgba(0,0,0,0.07);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Syne', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  header {
+    background: var(--text);
+    color: var(--bg);
+    padding: 18px 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  header .logo {
+    font-size: 11px;
+    font-family: 'DM Mono', monospace;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    opacity: 0.6;
+  }
+
+  header h1 {
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+  }
+
+  header .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--accent2);
+    margin-left: auto;
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.8); }
+  }
+
+  .container {
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 28px 20px 60px;
+  }
+
+  .section-title {
+    font-size: 11px;
+    font-family: 'DM Mono', monospace;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 14px;
+    margin-top: 28px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 16px;
+    box-shadow: var(--shadow);
+  }
+
+  .field-grid {
+    display: grid;
+    gap: 14px;
+  }
+
+  .field-grid.two-col {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  @media (max-width: 480px) {
+    .field-grid.two-col { grid-template-columns: 1fr; }
+  }
+
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  label .required {
+    color: var(--accent2);
+    font-size: 13px;
+  }
+
+  input, select, textarea {
+    font-family: 'Syne', sans-serif;
+    font-size: 14px;
+    background: var(--input-bg);
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    color: var(--text);
+    transition: border-color 0.2s, box-shadow 0.2s;
+    width: 100%;
+    -webkit-appearance: none;
+  }
+
+  input:focus, select:focus, textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(45, 106, 79, 0.12);
+  }
+
+  input.invalid, select.invalid {
+    border-color: var(--danger);
+    background: var(--danger-light);
+  }
+
+  select {
+    cursor: pointer;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%237a7568' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 36px;
+  }
+
+  .field-hint {
+    font-size: 11px;
+    color: var(--text-muted);
+    font-family: 'DM Mono', monospace;
+  }
+
+  .error-msg {
+    font-size: 11px;
+    color: var(--danger);
+    font-family: 'DM Mono', monospace;
+    display: none;
+  }
+
+  .field.has-error .error-msg { display: block; }
+  .field.has-error input,
+  .field.has-error select { border-color: var(--danger); background: var(--danger-light); }
+
+  /* Config banner */
+  .config-banner {
+    background: #fff8e7;
+    border: 1.5px solid #f0c040;
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-bottom: 20px;
+    font-size: 13px;
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+  }
+  .config-banner .icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+  .config-banner strong { display: block; font-size: 12px; letter-spacing: 0.05em; margin-bottom: 4px; }
+  .config-banner input {
+    font-size: 12px;
+    padding: 7px 10px;
+    font-family: 'DM Mono', monospace;
+    margin-top: 6px;
+  }
+
+  /* ID display */
+  .id-display {
+    background: var(--text);
+    color: var(--bg);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-family: 'DM Mono', monospace;
+    font-size: 18px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    display: inline-block;
+  }
+
+  /* Submit button */
+  .btn-submit {
+    width: 100%;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    padding: 16px;
+    font-family: 'Syne', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+    margin-top: 8px;
+  }
+  .btn-submit:hover { background: #235c40; }
+  .btn-submit:active { transform: scale(0.99); }
+  .btn-submit:disabled { background: var(--border); color: var(--text-muted); cursor: not-allowed; }
+
+  .btn-secondary {
+    background: var(--surface);
+    color: var(--text);
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 16px;
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .btn-secondary:hover { background: var(--bg); }
+
+  /* Success state */
+  .success-panel {
+    display: none;
+    background: var(--surface);
+    border: 2px solid var(--accent);
+    border-radius: 14px;
+    padding: 28px 24px;
+    text-align: center;
+    box-shadow: var(--shadow);
+  }
+  .success-panel.show { display: block; animation: fadeIn 0.4s ease; }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .success-panel h2 {
+    font-size: 20px;
+    font-weight: 800;
+    color: var(--accent);
+    margin-bottom: 6px;
+  }
+
+  .success-panel p {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-bottom: 20px;
+  }
+
+  #qr-container {
+    display: flex;
+    justify-content: center;
+    margin: 16px 0;
+  }
+
+  #qr-container canvas, #qr-container img {
+    border: 3px solid var(--text);
+    border-radius: 4px;
+    padding: 6px;
+    background: white;
+  }
+
+  .qr-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--text-muted);
+    text-align: center;
+    margin-top: 6px;
+    letter-spacing: 0.1em;
+  }
+
+  .print-area {
+    display: none;
+  }
+
+  .action-buttons {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 16px;
+  }
+
+  .btn-print {
+    background: var(--accent2);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 11px 20px;
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    letter-spacing: 0.04em;
+  }
+
+  .btn-new {
+    background: var(--text);
+    color: var(--bg);
+    border: none;
+    border-radius: 8px;
+    padding: 11px 20px;
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    letter-spacing: 0.04em;
+  }
+
+  .status-bar {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--text-muted);
+    text-align: center;
+    margin-top: 10px;
+    min-height: 16px;
+  }
+
+  .status-bar.loading { color: var(--accent); }
+  .status-bar.error { color: var(--danger); }
+  .status-bar.ok { color: var(--accent); }
+
+  /* Spinner */
+  .spinner {
+    display: inline-block;
+    width: 14px; height: 14px;
+    border: 2px solid currentColor;
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+    vertical-align: middle;
+    margin-right: 6px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  @media print {
+    body * { visibility: hidden; }
+    .print-area, .print-area * { visibility: visible; }
+    .print-area {
+      display: block !important;
+      position: fixed;
+      top: 0; left: 0;
+      width: 8cm;
+      padding: 8px;
+      background: white;
+    }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <div class="logo">Controle de Produção</div>
+    <h1>Entrada de Matéria Prima</h1>
+  </div>
+  <div class="dot"></div>
+</header>
+
+<div class="container">
+
+  <!-- Config Banner -->
+  <div class="config-banner" id="config-banner">
+    <span class="icon">⚙️</span>
+    <div style="flex:1">
+      <strong>CONFIGURAÇÃO INICIAL</strong>
+      Para salvar na planilha, informe o ID da sua Google Planilha e configure a API.
+      <a href="#" onclick="document.getElementById('config-section').scrollIntoView({behavior:'smooth'}); return false;" style="color: var(--accent); font-size:12px; font-weight:600;">Ver instruções ↓</a>
+    </div>
+  </div>
+
+  <!-- Form -->
+  <div id="form-panel">
+
+    <div class="section-title">Identificação</div>
+    <div class="card">
+      <div class="field-grid">
+        <div class="field">
+          <label>ID Gerado Automaticamente</label>
+          <div class="id-display" id="id-display">---</div>
+          <span class="field-hint">Gerado ao salvar o registro</span>
+        </div>
+        <div class="field" id="field-dt_entrada">
+          <label>Data de Entrada <span class="required">*</span></label>
+          <input type="date" id="dt_entrada" />
+          <span class="error-msg">Campo obrigatório</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-title">Produto</div>
+    <div class="card">
+      <div class="field-grid">
+        <div class="field" id="field-produto">
+          <label>Produto <span class="required">*</span></label>
+          <select id="produto">
+            <option value="">— Selecione —</option>
+          </select>
+          <span class="error-msg">Selecione um produto</span>
+        </div>
+        <div class="field two-col" id="field-marca">
+          <label>Marca <span class="required">*</span></label>
+          <input type="text" id="marca" placeholder="Nome da marca" />
+          <span class="error-msg">Campo obrigatório</span>
+        </div>
+      </div>
+      <div class="field-grid two-col" style="margin-top:14px">
+        <div class="field" id="field-quantidade">
+          <label>Quantidade <span class="required">*</span></label>
+          <input type="number" id="quantidade" placeholder="0" min="0" step="any"/>
+          <span class="error-msg">Informe a quantidade</span>
+        </div>
+        <div class="field" id="field-unidade">
+          <label>Unidade <span class="required">*</span></label>
+          <select id="unidade">
+            <option value="">— Selecione —</option>
+          </select>
+          <span class="error-msg">Selecione a unidade</span>
+        </div>
+      </div>
+      <div class="field-grid" style="margin-top:14px">
+        <div class="field" id="field-validade">
+          <label>Validade <span class="required">*</span></label>
+          <input type="date" id="validade" />
+          <span class="error-msg">Informe a validade</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-title">Fornecedor</div>
+    <div class="card">
+      <div class="field-grid two-col">
+        <div class="field" id="field-fornecedor">
+          <label>Fornecedor <span class="required">*</span></label>
+          <select id="fornecedor">
+            <option value="">— Selecione —</option>
+          </select>
+          <span class="error-msg">Selecione o fornecedor</span>
+        </div>
+        <div class="field" id="field-nota_fiscal">
+          <label>Nota Fiscal <span class="required">*</span></label>
+          <input type="text" id="nota_fiscal" placeholder="Nº da NF" />
+          <span class="error-msg">Campo obrigatório</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-title">Documentos</div>
+    <div class="card">
+      <div class="field" id="field-laudo">
+        <label>Laudo <span class="required">*</span></label>
+        <input type="text" id="laudo" placeholder="Número ou referência do laudo" />
+        <span class="error-msg">Campo obrigatório</span>
+      </div>
+    </div>
+
+    <button class="btn-submit" id="btn-salvar" onclick="salvarEntrada()">
+      ✓ Registrar Entrada
+    </button>
+    <div class="status-bar" id="status-bar"></div>
+
+  </div><!-- /form-panel -->
+
+  <!-- Success Panel -->
+  <div class="success-panel" id="success-panel">
+    <div style="font-size:36px; margin-bottom:8px">✅</div>
+    <h2>Entrada Registrada!</h2>
+    <p id="success-info">Registro salvo com sucesso.</p>
+
+    <div id="qr-container"></div>
+    <div class="qr-label" id="qr-label"></div>
+
+    <div class="action-buttons">
+      <button class="btn-print" onclick="imprimirEtiqueta()">🖨️ Imprimir Etiqueta</button>
+      <button class="btn-new" onclick="novaEntrada()">+ Nova Entrada</button>
+    </div>
+  </div>
+
+  <!-- Config Section -->
+  <div id="config-section" style="margin-top: 40px;">
+    <div class="section-title">Configuração — Google Sheets</div>
+    <div class="card">
+      <div class="field-grid">
+        <div class="field">
+          <label>ID da Planilha</label>
+          <input type="text" id="sheet-id" placeholder="Cole aqui o ID da sua planilha Google"
+            oninput="salvarConfig()" style="font-family: 'DM Mono', monospace; font-size:12px" />
+          <span class="field-hint">
+            Na URL da planilha: docs.google.com/spreadsheets/d/<strong>[ID AQUI]</strong>/edit
+          </span>
+        </div>
+        <div class="field">
+          <label>URL do Google Apps Script</label>
+          <input type="text" id="script-url" placeholder="https://script.google.com/macros/s/..."
+            oninput="salvarConfig()" style="font-family: 'DM Mono', monospace; font-size:12px" />
+          <span class="field-hint">
+            Cole aqui a URL de publicação do script (veja instruções abaixo)
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="background: #f8f7f4; border-style: dashed;">
+      <div style="font-size:13px; line-height:1.7; color: var(--text)">
+        <strong style="font-size:12px; letter-spacing:0.08em; text-transform:uppercase; color:var(--text-muted)">
+          📋 Como configurar o Google Apps Script
+        </strong><br><br>
+        <strong>1.</strong> Abra sua planilha Google → menu <em>Extensões → Apps Script</em><br>
+        <strong>2.</strong> Cole o código abaixo no editor e salve<br>
+        <strong>3.</strong> Clique em <em>Implantar → Nova implantação → App da Web</em><br>
+        <strong>4.</strong> Em "Quem tem acesso" escolha <em>Qualquer pessoa</em><br>
+        <strong>5.</strong> Copie a URL gerada e cole no campo acima<br><br>
+        <details>
+          <summary style="cursor:pointer; font-weight:600; color:var(--accent)">Ver código do Apps Script ▾</summary>
+          <pre style="background:#1a1a18; color:#f5f2eb; padding:14px; border-radius:8px; font-size:11px; margin-top:10px; overflow-x:auto; white-space:pre-wrap">
+function doPost(e) {
+  try {
+    var data = JSON.parse(e.postData.contents);
+    var ss = SpreadsheetApp.openById(data.sheetId);
+    var sheet = ss.getSheetByName('Entrada MPrima');
+    
+    var lastRow = sheet.getLastRow();
+    var newId = lastRow < 1 ? 1 : lastRow; // ID sequencial
+    var qrCode = 'MP-' + String(newId).padStart(5, '0');
+    
+    sheet.appendRow([
+      newId,
+      data.nota_fiscal,
+      data.laudo,
+      data.dt_entrada,
+      data.fornecedor,
+      data.marca,
+      data.validade,
+      data.produto,
+      data.unidade,
+      data.quantidade,
+      qrCode
+    ]);
+    
+    return ContentService
+      .createTextOutput(JSON.stringify({
+        success: true,
+        id: newId,
+        qrCode: qrCode
+      }))
+      .setMimeType(ContentService.MimeType.JSON);
+      
+  } catch(err) {
+    return ContentService
+      .createTextOutput(JSON.stringify({success: false, error: err.message}))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+function doGet(e) {
+  return ContentService
+    .createTextOutput(JSON.stringify({status: 'online'}))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+          </pre>
+        </details>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /container -->
+
+<!-- Print area (hidden, only shown on print) -->
+<div class="print-area" id="print-area">
+  <div style="text-align:center; font-family:monospace; padding:4px">
+    <div style="font-size:9px; text-transform:uppercase; letter-spacing:2px; margin-bottom:4px">Matéria Prima</div>
+    <div id="print-produto" style="font-size:13px; font-weight:bold; margin-bottom:2px"></div>
+    <div id="print-fornecedor" style="font-size:9px; margin-bottom:4px"></div>
+    <div id="print-qr"></div>
+    <div id="print-id" style="font-size:10px; margin-top:3px; letter-spacing:1px"></div>
+    <div id="print-data" style="font-size:8px; color:#555"></div>
+  </div>
+</div>
+
+<script>
+// ─── Data ───────────────────────────────────────────────
+const PRODUTOS = ["Abóbora","Aipim","Alho em pó","Alho torrado","Amido modificado","Aroam Bacon TB","Aroma Alho Poró IR","Aroma Cheddar","Aroma Churrasco","Aroma Costelinha","Aroma EP Lemon Pepper","Aroma EP Pão de alho","Aroma Ervas Finas","Aroma Ervas Finas Iby","Aroma Escondidinho Iby","Aroma Páprica IR","Aroma Pão de Alho","Aroma Queijo Iby","Aroma Queijo Nacho FX","Aroma creme de cebola FX","Aroma de Bacon FX","Aroma de churrasco FX","Aroma parmesão NG","Azeite","Açúcar de côco","Banana","Baru picado","Base original Iby","Base sabores Iby","Batata Baroa","Batata Doce","Batata Inglesa","Batata Marquesa","Beterraba","Bicarbonato de sódio","Canela","Caseinato de calcio","Castanha do Pará","Cebola em pó","Cenoura","Coconut Oil","Colorau","Couve","Cravo","Curry","Côco ralado","Cúrcuma","Embalagem Granel","Ervilha","Extrato de Alecrim","Farinha de Baru","Farinha de arroz","Farinha de mandioca","Farinha de pipoca","Feijão Branco","Flocão de Milho","Gergelim branco","Gergelim branco e preto","Gergelim preto","Goma Gumar","Goma xantana","Gordura de palma","Grão de Bico","Inulina Pó 90%","Lemon Pepper","Linhaça dourada","Linhaça marrom","Milho","Mostarda","Oleina de Palma Iby","Orégano","Pimenta preta","Polvilho azedo","Polvilho doce","Proteina de Arroz","Proteina de Ervilha 80%","Prémix EP Lemon Pepper","Prémix EP Pão de alho","Purê de Aipim Iby","Purê de Mandioca ferm Iby","Pó de Gengibre","Quinoa vermelha","Sal","Sal Rosa","Sal micronizado","Salsa desidratada","SweetMix 5907","SweetMix 6218","Tahine","Whey Protein","Água (100°C)","Óleo de Algodão","Óleo de Girasol"];
+
+const FORNECEDORES = ["37 Distribuidora","Agro Comercial","Alibra","Aqia","Bana Rio","Banana Climatizada","Bell Flavors","Brasnica - Ceasa","Caixas Itaipú","Casa GM Legumes","Casa Humaitá","Casa Iguatemi","Casa de Legumes","Casa dos Alhos","Casas Pedro","Caçula","Central de Caixas","Cinthia Lima","Composites Caixas","Copagaz","Elemento Puro","Elloprint","Essencial","Fabrício Cadeg","Fernando Cadeg","Firmino","FlaFlu Legumes","GW Distribuidora","Iby","Irreal","JTC","Josafá Cadeg","José Anderson","José Ribeiro","Jô Manhães Cadeg","LS Brochado Embalagens","Mistercaixa","Multflex","Oitava Serv Gráficos","Oxquim","PJ Embalagens","PT Santos","Papelex","Prodec Embalagens","RMoura","Rio Caixas 2020","Rio Quality","Riocam","Robertet","Sal e Alimentos","SweetMix","São Jorge Distr","Top Caixas","Varejo","Visi","Vitagrãos","Wonderfix"];
+
+const UNIDADES = ["Amarrado","Caixa / Saco 8","Caixa / Saco 10","Caixa / Saco 15","Caixa / Saco 18","Caixa / Saco 20","Caixa / Saco 25","Caixa / Saco 30","Caixa / Saco 40","Caixa / Saco 45","Caixa / Saco 50","Litro","M3","Quilo","Unidade","metros"];
+
+// ─── Init ────────────────────────────────────────────────
+function populateSelect(id, items) {
+  const sel = document.getElementById(id);
+  items.sort((a,b) => a.localeCompare(b,'pt')).forEach(item => {
+    const opt = document.createElement('option');
+    opt.value = item; opt.textContent = item;
+    sel.appendChild(opt);
+  });
+}
+
+window.onload = function() {
+  populateSelect('produto', PRODUTOS);
+  populateSelect('fornecedor', FORNECEDORES);
+  populateSelect('unidade', UNIDADES);
+
+  // default date = today
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('dt_entrada').value = today;
+
+  // load config
+  const sid = localStorage.getItem('sheet_id') || '';
+  const surl = localStorage.getItem('script_url') || '';
+  document.getElementById('sheet-id').value = sid;
+  document.getElementById('script-url').value = surl;
+  if (sid && surl) document.getElementById('config-banner').style.display = 'none';
+};
+
+function salvarConfig() {
+  localStorage.setItem('sheet_id', document.getElementById('sheet-id').value.trim());
+  localStorage.setItem('script_url', document.getElementById('script-url').value.trim());
+}
+
+// ─── Validation ──────────────────────────────────────────
+const REQUIRED_FIELDS = ['dt_entrada','produto','marca','quantidade','unidade','validade','fornecedor','nota_fiscal','laudo'];
+
+function validateField(id) {
+  const el = document.getElementById(id);
+  const fieldEl = document.getElementById('field-' + id);
+  if (!fieldEl) return true;
+  const val = el.value.trim();
+  if (!val) {
+    fieldEl.classList.add('has-error');
+    return false;
+  } else {
+    fieldEl.classList.remove('has-error');
+    return true;
+  }
+}
+
+function validateAll() {
+  let ok = true;
+  REQUIRED_FIELDS.forEach(id => { if (!validateField(id)) ok = false; });
+  return ok;
+}
+
+// add live validation
+REQUIRED_FIELDS.forEach(id => {
+  const el = document.getElementById(id);
+  if (el) el.addEventListener('change', () => validateField(id));
+});
+
+// ─── Save ────────────────────────────────────────────────
+let lastRecord = null;
+
+async function salvarEntrada() {
+  if (!validateAll()) {
+    setStatus('Preencha todos os campos obrigatórios.', 'error');
+    // scroll to first error
+    const firstErr = document.querySelector('.has-error');
+    if (firstErr) firstErr.scrollIntoView({behavior:'smooth', block:'center'});
+    return;
+  }
+
+  const scriptUrl = localStorage.getItem('script_url') || '';
+  const sheetId = localStorage.getItem('sheet_id') || '';
+
+  const data = {
+    sheetId: sheetId,
+    dt_entrada: document.getElementById('dt_entrada').value,
+    produto: document.getElementById('produto').value,
+    marca: document.getElementById('marca').value.trim(),
+    quantidade: document.getElementById('quantidade').value,
+    unidade: document.getElementById('unidade').value,
+    validade: document.getElementById('validade').value,
+    fornecedor: document.getElementById('fornecedor').value,
+    nota_fiscal: document.getElementById('nota_fiscal').value.trim(),
+    laudo: document.getElementById('laudo').value.trim(),
+  };
+
+  if (!scriptUrl || !sheetId) {
+    // demo mode — just show success with fake ID
+    const fakeId = Math.floor(Math.random() * 900) + 100;
+    const fakeQr = 'MP-' + String(fakeId).padStart(5, '0');
+    showSuccess(fakeId, fakeQr, data, true);
+    return;
+  }
+
+  setStatus('<span class="spinner"></span>Salvando...', 'loading');
+  document.getElementById('btn-salvar').disabled = true;
+
+  try {
+    const resp = await fetch(scriptUrl, {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+    const result = await resp.json();
+
+    if (result.success) {
+      showSuccess(result.id, result.qrCode, data, false);
+    } else {
+      setStatus('Erro: ' + (result.error || 'Falha ao salvar.'), 'error');
+      document.getElementById('btn-salvar').disabled = false;
+    }
+  } catch(err) {
+    setStatus('Erro de conexão. Verifique a URL do script.', 'error');
+    document.getElementById('btn-salvar').disabled = false;
+  }
+}
+
+function showSuccess(id, qrCode, data, isDemo) {
+  lastRecord = { id, qrCode, data };
+
+  document.getElementById('id-display').textContent = 'MP-' + String(id).padStart(5,'0');
+  document.getElementById('form-panel').style.display = 'none';
+  document.getElementById('success-panel').classList.add('show');
+
+  const demoMsg = isDemo ? ' (modo demonstração — configure a planilha para salvar de verdade)' : '';
+  document.getElementById('success-info').textContent =
+    `ID: ${qrCode} · ${data.produto} · ${data.fornecedor}${demoMsg}`;
+
+  // Generate QR
+  document.getElementById('qr-container').innerHTML = '';
+  new QRCode(document.getElementById('qr-container'), {
+    text: qrCode,
+    width: 160, height: 160,
+    colorDark: '#1a1a18', colorLight: '#ffffff',
+    correctLevel: QRCode.CorrectLevel.H
+  });
+  document.getElementById('qr-label').textContent = qrCode;
+
+  setStatus('', '');
+}
+
+function novaEntrada() {
+  document.getElementById('success-panel').classList.remove('show');
+  document.getElementById('form-panel').style.display = 'block';
+  document.getElementById('btn-salvar').disabled = false;
+  REQUIRED_FIELDS.forEach(id => {
+    const el = document.getElementById(id);
+    if (el && el.tagName !== 'SELECT') el.value = '';
+    if (el && el.tagName === 'SELECT') el.selectedIndex = 0;
+    const fieldEl = document.getElementById('field-' + id);
+    if (fieldEl) fieldEl.classList.remove('has-error');
+  });
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('dt_entrada').value = today;
+  document.getElementById('id-display').textContent = '---';
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+// ─── Print ───────────────────────────────────────────────
+function imprimirEtiqueta() {
+  if (!lastRecord) return;
+  const { qrCode, data } = lastRecord;
+
+  document.getElementById('print-produto').textContent = data.produto;
+  document.getElementById('print-fornecedor').textContent = data.fornecedor + ' · ' + data.marca;
+  document.getElementById('print-id').textContent = qrCode;
+  document.getElementById('print-data').textContent = 'Entrada: ' + data.dt_entrada + ' · Val: ' + data.validade;
+
+  // Generate QR for print
+  document.getElementById('print-qr').innerHTML = '';
+  new QRCode(document.getElementById('print-qr'), {
+    text: qrCode,
+    width: 120, height: 120,
+    colorDark: '#000000', colorLight: '#ffffff',
+    correctLevel: QRCode.CorrectLevel.H
+  });
+
+  setTimeout(() => window.print(), 300);
+}
+
+function setStatus(msg, type) {
+  const el = document.getElementById('status-bar');
+  el.innerHTML = msg;
+  el.className = 'status-bar ' + type;
+}
+</script>
+</body>
+</html>
