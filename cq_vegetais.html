@@ -1,0 +1,1251 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CQ Vegetais</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Epilogue:wght@400;600;700;900&display=swap');
+
+  :root {
+    --bg: #0f1a14;
+    --surface: #172110;
+    --surface2: #1e2d18;
+    --border: #2e4028;
+    --text: #e8f0e4;
+    --text-muted: #7a9470;
+    --accent: #6fcf4a;
+    --accent-dim: #3a6b28;
+    --accent-light: rgba(111,207,74,0.1);
+    --danger: #ff6b4a;
+    --danger-light: rgba(255,107,74,0.1);
+    --warning: #f0b429;
+    --warning-light: rgba(240,180,41,0.1);
+    --shadow: 0 4px 20px rgba(0,0,0,0.4);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Epilogue', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  header .logo {
+    font-size: 10px;
+    font-family: 'DM Mono', monospace;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  header h1 {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  header .badge {
+    margin-left: auto;
+    background: var(--accent-dim);
+    color: var(--accent);
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    padding: 4px 10px;
+    border-radius: 20px;
+    border: 1px solid var(--accent-dim);
+  }
+
+  .container {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 24px 16px 60px;
+  }
+
+  /* ── Steps indicator ── */
+  .steps {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    margin-bottom: 28px;
+    padding: 0 4px;
+  }
+
+  .step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    flex: 1;
+    position: relative;
+  }
+
+  .step:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    top: 14px;
+    left: 60%;
+    width: 80%;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .step.active:not(:last-child)::after,
+  .step.done:not(:last-child)::after {
+    background: var(--accent-dim);
+  }
+
+  .step-dot {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-muted);
+    background: var(--surface);
+    position: relative;
+    z-index: 1;
+    transition: all 0.3s;
+  }
+
+  .step.active .step-dot {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--accent-light);
+    box-shadow: 0 0 12px rgba(111,207,74,0.3);
+  }
+
+  .step.done .step-dot {
+    border-color: var(--accent);
+    background: var(--accent);
+    color: var(--bg);
+  }
+
+  .step-label {
+    font-size: 9px;
+    font-family: 'DM Mono', monospace;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  .step.active .step-label { color: var(--accent); }
+
+  /* ── Panels ── */
+  .panel { display: none; animation: slideIn 0.3s ease; }
+  .panel.active { display: block; }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── QR Scanner ── */
+  .scanner-wrap {
+    position: relative;
+    border-radius: 16px;
+    overflow: hidden;
+    border: 2px solid var(--border);
+    background: #000;
+    aspect-ratio: 1;
+    max-width: 380px;
+    margin: 0 auto;
+  }
+
+  #scanner-video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .scanner-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+  }
+
+  .scanner-frame {
+    width: 60%;
+    aspect-ratio: 1;
+    position: relative;
+  }
+
+  .scanner-frame::before,
+  .scanner-frame::after,
+  .scanner-frame .c3,
+  .scanner-frame .c4 {
+    content: '';
+    position: absolute;
+    width: 24px; height: 24px;
+    border-color: var(--accent);
+    border-style: solid;
+  }
+
+  .scanner-frame::before { top: 0; left: 0; border-width: 3px 0 0 3px; border-radius: 4px 0 0 0; }
+  .scanner-frame::after  { top: 0; right: 0; border-width: 3px 3px 0 0; border-radius: 0 4px 0 0; }
+  .scanner-frame .c3 { bottom: 0; left: 0; border-width: 0 0 3px 3px; border-radius: 0 0 0 4px; }
+  .scanner-frame .c4 { bottom: 0; right: 0; border-width: 0 3px 3px 0; border-radius: 0 0 4px 0; }
+
+  .scan-line {
+    position: absolute;
+    left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    animation: scanMove 2s linear infinite;
+    top: 0;
+  }
+
+  @keyframes scanMove {
+    0% { top: 5%; opacity: 1; }
+    90% { top: 95%; opacity: 1; }
+    100% { top: 95%; opacity: 0; }
+  }
+
+  .scanner-hint {
+    text-align: center;
+    margin-top: 14px;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    color: var(--text-muted);
+    letter-spacing: 0.05em;
+  }
+
+  .btn-manual {
+    display: block;
+    margin: 12px auto 0;
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text-muted);
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    padding: 8px 16px;
+    cursor: pointer;
+    letter-spacing: 0.05em;
+    transition: all 0.2s;
+  }
+  .btn-manual:hover { border-color: var(--accent); color: var(--accent); }
+
+  .manual-input-wrap {
+    display: none;
+    margin-top: 12px;
+    gap: 8px;
+  }
+  .manual-input-wrap.show { display: flex; }
+
+  /* ── Product card ── */
+  .product-card {
+    background: var(--surface2);
+    border: 1.5px solid var(--accent-dim);
+    border-radius: 14px;
+    padding: 18px 20px;
+    margin-bottom: 20px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .product-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--accent-dim), var(--accent), var(--accent-dim));
+  }
+
+  .product-card .qr-tag {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 0.12em;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .product-card .qr-tag::before {
+    content: '▣';
+    font-size: 13px;
+  }
+
+  .product-card h2 {
+    font-size: 22px;
+    font-weight: 900;
+    color: var(--text);
+    margin-bottom: 10px;
+    line-height: 1.1;
+  }
+
+  .product-meta {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 10px;
+  }
+
+  .meta-item {
+    background: var(--surface);
+    border-radius: 8px;
+    padding: 8px 12px;
+  }
+
+  .meta-item .label {
+    font-size: 9px;
+    font-family: 'DM Mono', monospace;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 2px;
+  }
+
+  .meta-item .value {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  /* ── Form fields ── */
+  .section-title {
+    font-size: 10px;
+    font-family: 'DM Mono', monospace;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 12px;
+    margin-top: 24px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 14px;
+  }
+
+  label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  label .required { color: var(--danger); font-size: 13px; }
+
+  input[type="number"], input[type="text"] {
+    font-family: 'Epilogue', sans-serif;
+    font-size: 16px;
+    background: var(--surface2);
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+    color: var(--text);
+    transition: border-color 0.2s, box-shadow 0.2s;
+    width: 100%;
+    -webkit-appearance: none;
+  }
+
+  input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(111,207,74,0.12);
+  }
+
+  .field.has-error input,
+  .field.has-error .visual-options,
+  .field.has-error .toggle-wrap { border-color: var(--danger) !important; }
+
+  .error-msg {
+    font-size: 11px;
+    color: var(--danger);
+    font-family: 'DM Mono', monospace;
+    display: none;
+  }
+  .field.has-error .error-msg { display: block; }
+
+  /* ── Visual options ── */
+  .visual-options {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    padding: 10px;
+    background: var(--surface2);
+  }
+
+  .visual-opt {
+    cursor: pointer;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 8px;
+    text-align: center;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-muted);
+    transition: all 0.2s;
+    user-select: none;
+  }
+
+  .visual-opt:hover { border-color: var(--accent-dim); color: var(--text); }
+
+  .visual-opt.selected {
+    color: var(--bg);
+    font-weight: 700;
+  }
+
+  .visual-opt[data-val="Bom"].selected { background: #3a8c2a; border-color: #4aaa36; color: white; }
+  .visual-opt[data-val="Normal"].selected { background: #2a6a8c; border-color: #36a0aa; color: white; }
+  .visual-opt[data-val="Ruim"].selected { background: #8c6a2a; border-color: #aaa036; color: white; }
+  .visual-opt[data-val="Fora de padrão"].selected { background: #8c2a2a; border-color: #c44; color: white; }
+
+  /* ── Toggle (Metais) ── */
+  .toggle-wrap {
+    display: flex;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    background: var(--surface2);
+  }
+
+  .toggle-opt {
+    flex: 1;
+    padding: 12px;
+    text-align: center;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: var(--text-muted);
+    user-select: none;
+  }
+
+  .toggle-opt.selected-sim { background: var(--danger); color: white; }
+  .toggle-opt.selected-nao { background: var(--accent-dim); color: var(--accent); }
+
+  /* ── Photo ── */
+  .photo-area {
+    border: 2px dashed var(--border);
+    border-radius: 14px;
+    padding: 24px 16px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: var(--surface2);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .photo-area:hover { border-color: var(--accent-dim); }
+  .photo-area.has-photo { border-style: solid; border-color: var(--accent-dim); padding: 0; }
+
+  .photo-area .photo-icon { font-size: 32px; margin-bottom: 8px; }
+  .photo-area .photo-text { font-size: 13px; color: var(--text-muted); }
+  .photo-area .photo-hint { font-size: 11px; color: var(--text-muted); font-family: 'DM Mono', monospace; margin-top: 4px; }
+
+  #photo-preview {
+    width: 100%;
+    border-radius: 12px;
+    display: none;
+    max-height: 260px;
+    object-fit: cover;
+  }
+
+  .photo-change {
+    position: absolute;
+    bottom: 10px; right: 10px;
+    background: rgba(0,0,0,0.7);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-size: 11px;
+    cursor: pointer;
+    font-family: 'DM Mono', monospace;
+    display: none;
+  }
+
+  #photo-input { display: none; }
+
+  /* ── Buttons ── */
+  .btn-primary {
+    width: 100%;
+    background: var(--accent);
+    color: var(--bg);
+    border: none;
+    border-radius: 12px;
+    padding: 16px;
+    font-family: 'Epilogue', sans-serif;
+    font-size: 15px;
+    font-weight: 900;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-top: 10px;
+  }
+  .btn-primary:hover { background: #85e05f; }
+  .btn-primary:active { transform: scale(0.99); }
+  .btn-primary:disabled { background: var(--border); color: var(--text-muted); cursor: not-allowed; }
+
+  .btn-back {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text-muted);
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    padding: 8px 14px;
+    cursor: pointer;
+    margin-bottom: 20px;
+    transition: all 0.2s;
+  }
+  .btn-back:hover { border-color: var(--text-muted); color: var(--text); }
+
+  /* ── Status ── */
+  .status-bar {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--text-muted);
+    text-align: center;
+    margin-top: 10px;
+    min-height: 16px;
+  }
+  .status-bar.loading { color: var(--accent); }
+  .status-bar.error { color: var(--danger); }
+
+  .spinner {
+    display: inline-block;
+    width: 12px; height: 12px;
+    border: 2px solid currentColor;
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+    vertical-align: middle;
+    margin-right: 6px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── Success ── */
+  .success-panel {
+    display: none;
+    text-align: center;
+    padding: 40px 20px;
+    animation: slideIn 0.4s ease;
+  }
+  .success-panel.show { display: block; }
+
+  .success-icon {
+    font-size: 56px;
+    margin-bottom: 16px;
+    animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+
+  @keyframes popIn {
+    from { transform: scale(0); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+
+  .success-panel h2 {
+    font-size: 24px;
+    font-weight: 900;
+    color: var(--accent);
+    margin-bottom: 8px;
+  }
+
+  .success-panel p {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-bottom: 28px;
+    font-family: 'DM Mono', monospace;
+  }
+
+  .btn-new {
+    background: var(--surface2);
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    font-family: 'Epilogue', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    padding: 14px 32px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-new:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* ── Config ── */
+  .config-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px;
+    margin-top: 32px;
+  }
+
+  .config-card input {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    padding: 9px 12px;
+    color: var(--text);
+    width: 100%;
+    margin-top: 6px;
+  }
+
+  .field-grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  @media (max-width: 480px) {
+    .field-grid-2 { grid-template-columns: 1fr; }
+    .product-meta { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <div class="logo">Controle de Qualidade</div>
+    <h1>CQ Vegetais</h1>
+  </div>
+  <div class="badge">MÓDULO 2</div>
+</header>
+
+<div class="container">
+
+  <!-- Steps -->
+  <div class="steps">
+    <div class="step active" id="step-1">
+      <div class="step-dot">1</div>
+      <div class="step-label">Scan</div>
+    </div>
+    <div class="step" id="step-2">
+      <div class="step-dot">2</div>
+      <div class="step-label">Dados</div>
+    </div>
+    <div class="step" id="step-3">
+      <div class="step-dot">✓</div>
+      <div class="step-label">Salvo</div>
+    </div>
+  </div>
+
+  <!-- Panel 1: Scanner -->
+  <div class="panel active" id="panel-scan">
+
+    <div class="scanner-wrap">
+      <video id="scanner-video" autoplay playsinline muted></video>
+      <div class="scanner-overlay">
+        <div class="scanner-frame">
+          <span class="c3"></span><span class="c4"></span>
+          <div class="scan-line"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="scanner-hint">Aponte a câmera para o QR Code da etiqueta</div>
+
+    <button class="btn-manual" onclick="toggleManual()">✎ Digitar código manualmente</button>
+
+    <div class="manual-input-wrap" id="manual-wrap">
+      <input type="text" id="manual-code" placeholder="Ex: MP-00001" style="flex:1; font-family:'DM Mono',monospace; font-size:13px; background:var(--surface2); border:1.5px solid var(--border); border-radius:8px; padding:10px 12px; color:var(--text);" />
+      <button onclick="buscarManual()" style="background:var(--accent); color:var(--bg); border:none; border-radius:8px; padding:10px 16px; font-weight:700; cursor:pointer; font-family:'Epilogue',sans-serif; white-space:nowrap;">Buscar</button>
+    </div>
+
+    <div class="status-bar" id="scan-status"></div>
+
+  </div>
+
+  <!-- Panel 2: Form -->
+  <div class="panel" id="panel-form">
+
+    <button class="btn-back" onclick="voltarScan()">← Escanear outro</button>
+
+    <!-- Product info card -->
+    <div class="product-card" id="product-card">
+      <div class="qr-tag" id="pc-qr">MP-00000</div>
+      <h2 id="pc-produto">—</h2>
+      <div class="product-meta">
+        <div class="meta-item">
+          <div class="label">Fornecedor</div>
+          <div class="value" id="pc-fornecedor">—</div>
+        </div>
+        <div class="meta-item">
+          <div class="label">Dt. Entrada</div>
+          <div class="value" id="pc-dt">—</div>
+        </div>
+        <div class="meta-item">
+          <div class="label">Validade</div>
+          <div class="value" id="pc-validade">—</div>
+        </div>
+        <div class="meta-item">
+          <div class="label">Quantidade</div>
+          <div class="value" id="pc-qtd">—</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Visual -->
+    <div class="section-title">Avaliação Visual</div>
+    <div class="field" id="field-visual">
+      <label>Visual <span class="required">*</span></label>
+      <div class="visual-options" id="visual-options">
+        <div class="visual-opt" data-val="Bom" onclick="selectVisual(this)">👍 Bom</div>
+        <div class="visual-opt" data-val="Normal" onclick="selectVisual(this)">✅ Normal</div>
+        <div class="visual-opt" data-val="Ruim" onclick="selectVisual(this)">⚠️ Ruim</div>
+        <div class="visual-opt" data-val="Fora de padrão" onclick="selectVisual(this)">🚫 Fora de padrão</div>
+      </div>
+      <span class="error-msg">Selecione uma opção</span>
+    </div>
+
+    <!-- Medições -->
+    <div class="section-title">Medições</div>
+    <div class="field-grid-2">
+      <div class="field" id="field-espessura">
+        <label>Espessura <span class="required">*</span></label>
+        <input type="number" id="espessura" placeholder="0.0" step="0.1" min="0" />
+        <span class="error-msg">Campo obrigatório</span>
+      </div>
+      <div class="field" id="field-umidade">
+        <label>Umidade (%) <span class="required">*</span></label>
+        <input type="number" id="umidade" placeholder="0.0" step="0.1" min="0" max="100" />
+        <span class="error-msg">Campo obrigatório</span>
+      </div>
+    </div>
+
+    <!-- Metais -->
+    <div class="section-title">Detecção de Metais</div>
+    <div class="field" id="field-metais">
+      <label>Metais detectados? <span class="required">*</span></label>
+      <div class="toggle-wrap" id="metais-toggle">
+        <div class="toggle-opt" data-val="Sim" onclick="selectMetais(this)">⚠️ SIM</div>
+        <div class="toggle-opt" data-val="Não" onclick="selectMetais(this)">✓ NÃO</div>
+      </div>
+      <span class="error-msg">Selecione uma opção</span>
+    </div>
+
+    <!-- Foto -->
+    <div class="section-title">Foto do Produto</div>
+    <div class="field" id="field-foto">
+      <label>Foto <span class="required">*</span></label>
+      <div class="photo-area" id="photo-area" onclick="document.getElementById('photo-input').click()">
+        <div class="photo-icon">📷</div>
+        <div class="photo-text">Toque para fotografar</div>
+        <div class="photo-hint">ou selecionar da galeria</div>
+        <img id="photo-preview" />
+        <button class="photo-change" id="photo-change-btn" onclick="event.stopPropagation(); document.getElementById('photo-input').click()">trocar foto</button>
+      </div>
+      <input type="file" id="photo-input" accept="image/*" capture="environment" onchange="handlePhoto(this)" />
+      <span class="error-msg">Foto obrigatória</span>
+    </div>
+
+    <button class="btn-primary" id="btn-salvar" onclick="salvarCQ()">✓ Registrar CQ</button>
+    <div class="status-bar" id="form-status"></div>
+
+  </div>
+
+  <!-- Panel 3: Success -->
+  <div class="panel" id="panel-success">
+    <div class="success-panel show">
+      <div class="success-icon">✅</div>
+      <h2>CQ Registrado!</h2>
+      <p id="success-info">Dados salvos com sucesso.</p>
+      <button class="btn-new" onclick="novoCQ()">+ Novo CQ</button>
+    </div>
+  </div>
+
+  <!-- Config -->
+  <div class="config-card">
+    <div class="section-title" style="margin-top:0">Configuração</div>
+    <div class="field-grid-2">
+      <div>
+        <label style="font-size:10px">ID da Planilha</label>
+        <input type="text" id="sheet-id" placeholder="ID do Google Sheets" oninput="salvarConfig()" />
+      </div>
+      <div>
+        <label style="font-size:10px">URL do Apps Script</label>
+        <input type="text" id="script-url" placeholder="https://script.google.com/..." oninput="salvarConfig()" />
+      </div>
+    </div>
+    <div style="margin-top:12px">
+      <label style="font-size:10px">ID da Pasta do Drive (fotos)</label>
+      <input type="text" id="drive-folder-id" placeholder="ID da pasta no Google Drive" oninput="salvarConfig()" style="font-family:'DM Mono',monospace; font-size:11px; background:var(--surface); border:1.5px solid var(--border); border-radius:8px; padding:9px 12px; color:var(--text); width:100%; margin-top:6px;" />
+      <div style="font-size:10px; color:var(--text-muted); font-family:'DM Mono',monospace; margin-top:4px;">
+        Na URL da pasta do Drive: drive.google.com/drive/folders/<strong>[ID AQUI]</strong>
+      </div>
+    </div>
+
+    <details style="margin-top:16px">
+      <summary style="cursor:pointer; font-size:11px; font-family:'DM Mono',monospace; color:var(--accent); letter-spacing:0.08em;">VER CÓDIGO DO APPS SCRIPT ▾</summary>
+      <pre style="background:#0a0f0a; color:#b8d4b0; padding:14px; border-radius:8px; font-size:10px; margin-top:10px; overflow-x:auto; white-space:pre-wrap; border:1px solid var(--border)">
+// Cole este código no MESMO projeto Apps Script da Entrada de MPrima
+// Adicione a função abaixo ao arquivo existente
+
+function doPost(e) {
+  try {
+    var data = JSON.parse(e.postData.contents);
+    var ss = SpreadsheetApp.openById(data.sheetId);
+
+    // ── Entrada MPrima (já existente) ──
+    if (data.tipo === 'entrada') {
+      var sheet = ss.getSheetByName('Entrada MPrima');
+      var lastRow = sheet.getLastRow();
+      var newId = lastRow < 1 ? 1 : lastRow;
+      var qrCode = 'MP-' + String(newId).padStart(5, '0');
+      sheet.appendRow([newId, data.nota_fiscal, data.laudo,
+        data.dt_entrada, data.fornecedor, data.marca,
+        data.validade, data.produto, data.unidade,
+        data.quantidade, qrCode]);
+      return ok({id: newId, qrCode: qrCode});
+    }
+
+    // ── Buscar entrada pelo QR ──
+    if (data.tipo === 'buscar') {
+      var sheet = ss.getSheetByName('Entrada MPrima');
+      var values = sheet.getDataRange().getValues();
+      for (var i = 1; i < values.length; i++) {
+        if (values[i][10] === data.qrCode) {
+          return ok({
+            encontrado: true,
+            id: values[i][0],
+            nota_fiscal: values[i][1],
+            laudo: values[i][2],
+            dt_entrada: values[i][3],
+            fornecedor: values[i][4],
+            marca: values[i][5],
+            validade: values[i][6],
+            produto: values[i][7],
+            unidade: values[i][8],
+            quantidade: values[i][9],
+            qrCode: values[i][10]
+          });
+        }
+      }
+      return ok({encontrado: false});
+    }
+
+    // ── Salvar CQ ──
+    if (data.tipo === 'cq') {
+      var sheetCQ = ss.getSheetByName('CQ vegetais');
+      var lastCQ = sheetCQ.getLastRow();
+      var newCQId = lastCQ < 1 ? 1 : lastCQ;
+
+      // Upload foto para Drive
+      var fotoLink = '';
+      if (data.fotoBase64 && data.fotoNome) {
+        var folder = DriveApp.getFolderById(data.folderId);
+        var blob = Utilities.newBlob(
+          Utilities.base64Decode(data.fotoBase64),
+          data.fotoMime,
+          data.fotoNome
+        );
+        var file = folder.createFile(blob);
+        file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+        fotoLink = file.getUrl();
+      }
+
+      sheetCQ.appendRow([
+        newCQId,
+        data.dt_entrada,
+        data.qrCode,
+        data.visual,
+        fotoLink,
+        data.espessura,
+        data.umidade,
+        data.metais
+      ]);
+      return ok({id: newCQId, fotoLink: fotoLink});
+    }
+
+  } catch(err) {
+    return erro(err.message);
+  }
+}
+
+function ok(data) {
+  return ContentService
+    .createTextOutput(JSON.stringify({success: true, ...data}))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function erro(msg) {
+  return ContentService
+    .createTextOutput(JSON.stringify({success: false, error: msg}))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function doGet(e) {
+  return ContentService
+    .createTextOutput(JSON.stringify({status: 'online'}))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+      </pre>
+    </details>
+  </div>
+
+</div><!-- /container -->
+
+<script>
+// ─── Config ──────────────────────────────────────────────
+window.onload = function() {
+  document.getElementById('sheet-id').value = localStorage.getItem('cq_sheet_id') || '';
+  document.getElementById('script-url').value = localStorage.getItem('cq_script_url') || '';
+  document.getElementById('drive-folder-id').value = localStorage.getItem('cq_folder_id') || '';
+  startScanner();
+};
+
+function salvarConfig() {
+  localStorage.setItem('cq_sheet_id', document.getElementById('sheet-id').value.trim());
+  localStorage.setItem('cq_script_url', document.getElementById('script-url').value.trim());
+  localStorage.setItem('cq_folder_id', document.getElementById('drive-folder-id').value.trim());
+}
+
+// ─── Steps ───────────────────────────────────────────────
+function setStep(n) {
+  for (let i = 1; i <= 3; i++) {
+    const s = document.getElementById('step-' + i);
+    s.classList.remove('active', 'done');
+    if (i < n) s.classList.add('done');
+    else if (i === n) s.classList.add('active');
+  }
+}
+
+function showPanel(id) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+// ─── Scanner ─────────────────────────────────────────────
+let videoStream = null;
+let scanInterval = null;
+
+async function startScanner() {
+  const video = document.getElementById('scanner-video');
+  try {
+    videoStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'environment' }
+    });
+    video.srcObject = videoStream;
+    video.play();
+    scanInterval = setInterval(scanFrame, 300);
+  } catch(err) {
+    setScanStatus('Câmera não disponível. Use o campo manual abaixo.', 'error');
+    document.getElementById('manual-wrap').classList.add('show');
+  }
+}
+
+function stopScanner() {
+  if (scanInterval) { clearInterval(scanInterval); scanInterval = null; }
+  if (videoStream) { videoStream.getTracks().forEach(t => t.stop()); videoStream = null; }
+}
+
+function scanFrame() {
+  const video = document.getElementById('scanner-video');
+  if (video.readyState !== video.HAVE_ENOUGH_DATA) return;
+
+  const canvas = document.createElement('canvas');
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(video, 0, 0);
+  const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  const code = jsQR(imageData.data, imageData.width, imageData.height);
+
+  if (code && code.data) {
+    stopScanner();
+    buscarQR(code.data);
+  }
+}
+
+function toggleManual() {
+  const wrap = document.getElementById('manual-wrap');
+  wrap.classList.toggle('show');
+  if (wrap.classList.contains('show')) {
+    document.getElementById('manual-code').focus();
+  }
+}
+
+function buscarManual() {
+  const code = document.getElementById('manual-code').value.trim().toUpperCase();
+  if (!code) return;
+  buscarQR(code);
+}
+
+// ─── Buscar entrada ───────────────────────────────────────
+let currentEntry = null;
+
+async function buscarQR(qrCode) {
+  setScanStatus('<span class="spinner"></span>Buscando ' + qrCode + '...', 'loading');
+
+  const scriptUrl = localStorage.getItem('cq_script_url') || '';
+  const sheetId = localStorage.getItem('cq_sheet_id') || '';
+
+  if (!scriptUrl || !sheetId) {
+    // Demo mode
+    currentEntry = {
+      qrCode, produto: 'Batata Doce', fornecedor: 'Casa GM Legumes',
+      dt_entrada: '2025-04-17', validade: '2025-04-24',
+      quantidade: '50', unidade: 'Quilo', marca: 'Demo'
+    };
+    preencherCard(currentEntry);
+    return;
+  }
+
+  try {
+    const resp = await fetch(scriptUrl, {
+      method: 'POST',
+      body: JSON.stringify({ tipo: 'buscar', sheetId, qrCode })
+    });
+    const result = await resp.json();
+
+    if (result.success && result.encontrado) {
+      currentEntry = result;
+      preencherCard(result);
+    } else if (result.success && !result.encontrado) {
+      setScanStatus('QR Code não encontrado: ' + qrCode, 'error');
+      setTimeout(() => { startScanner(); setScanStatus('', ''); }, 2000);
+    } else {
+      setScanStatus('Erro: ' + (result.error || 'Falha'), 'error');
+      setTimeout(() => { startScanner(); setScanStatus('', ''); }, 2000);
+    }
+  } catch(err) {
+    setScanStatus('Erro de conexão.', 'error');
+    setTimeout(() => { startScanner(); setScanStatus('', ''); }, 2000);
+  }
+}
+
+function preencherCard(entry) {
+  document.getElementById('pc-qr').textContent = entry.qrCode;
+  document.getElementById('pc-produto').textContent = entry.produto;
+  document.getElementById('pc-fornecedor').textContent = entry.fornecedor;
+  document.getElementById('pc-dt').textContent = entry.dt_entrada;
+  document.getElementById('pc-validade').textContent = entry.validade || '—';
+  document.getElementById('pc-qtd').textContent = (entry.quantidade || '—') + ' ' + (entry.unidade || '');
+
+  setStep(2);
+  showPanel('panel-form');
+  setScanStatus('', '');
+}
+
+function voltarScan() {
+  currentEntry = null;
+  resetForm();
+  setStep(1);
+  showPanel('panel-scan');
+  startScanner();
+}
+
+// ─── Visual ──────────────────────────────────────────────
+let selectedVisual = '';
+let selectedMetais = '';
+
+function selectVisual(el) {
+  document.querySelectorAll('.visual-opt').forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedVisual = el.dataset.val;
+  document.getElementById('field-visual').classList.remove('has-error');
+}
+
+function selectMetais(el) {
+  document.querySelectorAll('.toggle-opt').forEach(o => {
+    o.classList.remove('selected-sim', 'selected-nao');
+  });
+  const val = el.dataset.val;
+  el.classList.add(val === 'Sim' ? 'selected-sim' : 'selected-nao');
+  selectedMetais = val;
+  document.getElementById('field-metais').classList.remove('has-error');
+}
+
+// ─── Photo ───────────────────────────────────────────────
+let photoFile = null;
+let photoBase64 = null;
+
+function handlePhoto(input) {
+  if (!input.files || !input.files[0]) return;
+  photoFile = input.files[0];
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const preview = document.getElementById('photo-preview');
+    preview.src = e.target.result;
+    preview.style.display = 'block';
+    document.getElementById('photo-area').classList.add('has-photo');
+    document.getElementById('photo-change-btn').style.display = 'block';
+    // store base64 (strip header)
+    photoBase64 = e.target.result.split(',')[1];
+    document.getElementById('field-foto').classList.remove('has-error');
+  };
+  reader.readAsDataURL(photoFile);
+}
+
+// ─── Validation ──────────────────────────────────────────
+function validateForm() {
+  let ok = true;
+
+  if (!selectedVisual) {
+    document.getElementById('field-visual').classList.add('has-error');
+    ok = false;
+  }
+
+  ['espessura', 'umidade'].forEach(id => {
+    const el = document.getElementById(id);
+    const fieldEl = document.getElementById('field-' + id);
+    if (!el.value.trim()) {
+      fieldEl.classList.add('has-error');
+      ok = false;
+    } else {
+      fieldEl.classList.remove('has-error');
+    }
+  });
+
+  if (!selectedMetais) {
+    document.getElementById('field-metais').classList.add('has-error');
+    ok = false;
+  }
+
+  if (!photoBase64) {
+    document.getElementById('field-foto').classList.add('has-error');
+    ok = false;
+  }
+
+  return ok;
+}
+
+// ─── Save ────────────────────────────────────────────────
+async function salvarCQ() {
+  if (!validateForm()) {
+    setFormStatus('Preencha todos os campos obrigatórios.', 'error');
+    const firstErr = document.querySelector('#panel-form .has-error');
+    if (firstErr) firstErr.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    return;
+  }
+
+  const scriptUrl = localStorage.getItem('cq_script_url') || '';
+  const sheetId = localStorage.getItem('cq_sheet_id') || '';
+  const folderId = localStorage.getItem('cq_folder_id') || '';
+
+  const nomeArquivo = (currentEntry.qrCode || 'foto') + '_' +
+    new Date().toISOString().replace(/[:.]/g, '-') + '.jpg';
+
+  const payload = {
+    tipo: 'cq',
+    sheetId,
+    folderId,
+    qrCode: currentEntry.qrCode,
+    dt_entrada: currentEntry.dt_entrada,
+    visual: selectedVisual,
+    espessura: document.getElementById('espessura').value,
+    umidade: document.getElementById('umidade').value,
+    metais: selectedMetais,
+    fotoBase64: photoBase64,
+    fotoMime: photoFile ? photoFile.type : 'image/jpeg',
+    fotoNome: nomeArquivo
+  };
+
+  if (!scriptUrl || !sheetId) {
+    // Demo
+    mostrarSucesso(currentEntry.qrCode, currentEntry.produto, true);
+    return;
+  }
+
+  setFormStatus('<span class="spinner"></span>Salvando...', 'loading');
+  document.getElementById('btn-salvar').disabled = true;
+
+  try {
+    const resp = await fetch(scriptUrl, {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+    const result = await resp.json();
+
+    if (result.success) {
+      mostrarSucesso(currentEntry.qrCode, currentEntry.produto, false);
+    } else {
+      setFormStatus('Erro: ' + (result.error || 'Falha ao salvar.'), 'error');
+      document.getElementById('btn-salvar').disabled = false;
+    }
+  } catch(err) {
+    setFormStatus('Erro de conexão. Verifique a URL do script.', 'error');
+    document.getElementById('btn-salvar').disabled = false;
+  }
+}
+
+function mostrarSucesso(qrCode, produto, isDemo) {
+  const msg = isDemo
+    ? qrCode + ' · ' + produto + ' (modo demonstração)'
+    : qrCode + ' · ' + produto + ' · CQ salvo na planilha';
+  document.getElementById('success-info').textContent = msg;
+  setStep(3);
+  showPanel('panel-success');
+}
+
+function novoCQ() {
+  resetForm();
+  setStep(1);
+  showPanel('panel-scan');
+  startScanner();
+}
+
+function resetForm() {
+  selectedVisual = '';
+  selectedMetais = '';
+  photoFile = null;
+  photoBase64 = null;
+  document.querySelectorAll('.visual-opt').forEach(o => o.classList.remove('selected'));
+  document.querySelectorAll('.toggle-opt').forEach(o => o.classList.remove('selected-sim', 'selected-nao'));
+  document.getElementById('espessura').value = '';
+  document.getElementById('umidade').value = '';
+  document.getElementById('photo-preview').style.display = 'none';
+  document.getElementById('photo-area').classList.remove('has-photo');
+  document.getElementById('photo-change-btn').style.display = 'none';
+  document.getElementById('photo-input').value = '';
+  document.getElementById('btn-salvar').disabled = false;
+  document.querySelectorAll('.has-error').forEach(el => el.classList.remove('has-error'));
+  setFormStatus('', '');
+  setScanStatus('', '');
+  document.getElementById('manual-code').value = '';
+}
+
+function setScanStatus(msg, type) {
+  const el = document.getElementById('scan-status');
+  el.innerHTML = msg;
+  el.className = 'status-bar ' + (type || '');
+}
+
+function setFormStatus(msg, type) {
+  const el = document.getElementById('form-status');
+  el.innerHTML = msg;
+  el.className = 'status-bar ' + (type || '');
+}
+</script>
+</body>
+</html>
