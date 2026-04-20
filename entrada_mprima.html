@@ -743,8 +743,9 @@ function chamarScript(scriptUrl, data, onSuccess, onError) {
     onSuccess(result);
   };
 
+  var baseUrl = scriptUrl.split('?')[0];
   const script = document.createElement('script');
-  script.src = scriptUrl + '?callback=' + cbName + '&payload=' + encodeURIComponent(JSON.stringify(data));
+  script.src = baseUrl + '?callback=' + cbName + '&payload=' + encodeURIComponent(JSON.stringify(data));
   script.onerror = function() {
     clearTimeout(timeout);
     delete window[cbName];
