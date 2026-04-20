@@ -978,7 +978,7 @@ async function buscarLote(fase, qrCode) {
   } else {
     try {
       const resp = await fetch(scriptUrl, {
-        method: 'POST', body: JSON.stringify({ tipo: 'buscar', sheetId, qrCode })
+        method: 'POST', redirect: 'follow', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify({ tipo: 'buscar', sheetId, qrCode })
       });
       const result = await resp.json();
       if (result.success && result.encontrado) { entry = result; }
@@ -1091,7 +1091,7 @@ async function salvar(fase) {
   setStatus(fase, '<span class="spinner"></span>Salvando...', 'loading');
 
   try {
-    const resp = await fetch(scriptUrl, { method: 'POST', body: JSON.stringify(payload) });
+    const resp = await fetch(scriptUrl, { method: 'POST', redirect: 'follow', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify(payload) });
     const result = await resp.json();
     if (result.success) {
       if (fase === 'final' && result.qrNovo) mostrarQR(fase, result.qrNovo, lote.produto);

@@ -1024,6 +1024,8 @@ async function buscarQR(qrCode) {
   try {
     const resp = await fetch(scriptUrl, {
       method: 'POST',
+      redirect: 'follow',
+      headers: {'Content-Type': 'text/plain'},
       body: JSON.stringify({ tipo: 'buscar', sheetId, qrCode })
     });
     const result = await resp.json();

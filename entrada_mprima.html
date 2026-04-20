@@ -721,6 +721,8 @@ async function salvarEntrada() {
   try {
     const resp = await fetch(scriptUrl, {
       method: 'POST',
+      redirect: 'follow',
+      headers: {'Content-Type': 'text/plain'},
       body: JSON.stringify(data)
     });
     const result = await resp.json();
