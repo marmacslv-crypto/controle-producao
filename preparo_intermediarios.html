@@ -1,0 +1,1235 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Preparo Intermediários</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Barlow+Condensed:wght@400;600;700;800;900&display=swap');
+
+  :root {
+    --bg: #1c1c1e;
+    --surface: #2c2c2e;
+    --surface2: #3a3a3c;
+    --border: #48484a;
+    --text: #f2f2f7;
+    --text-muted: #8e8e93;
+    --accent: #ff9f0a;
+    --accent-dim: rgba(255,159,10,0.15);
+    --accent-dark: #c97a00;
+    --green: #30d158;
+    --green-dim: rgba(48,209,88,0.15);
+    --red: #ff453a;
+    --red-dim: rgba(255,69,58,0.15);
+    --blue: #0a84ff;
+    --blue-dim: rgba(10,132,255,0.15);
+    --shadow: 0 4px 24px rgba(0,0,0,0.5);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Barlow Condensed', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* ── Header ── */
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    position: sticky;
+    top: 0;
+    z-index: 200;
+  }
+
+  .header-icon {
+    width: 36px; height: 36px;
+    background: var(--accent);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+
+  header h1 {
+    font-size: 18px;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    line-height: 1;
+  }
+
+  header .sub {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    color: var(--text-muted);
+    letter-spacing: 0.1em;
+    margin-top: 2px;
+  }
+
+  .container {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 20px 16px 80px;
+  }
+
+  /* ── Phase tabs ── */
+  .phase-tabs {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+    margin-bottom: 24px;
+  }
+
+  .phase-tab {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 6px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+  }
+
+  .phase-tab .tab-icon { font-size: 20px; display: block; margin-bottom: 4px; }
+  .phase-tab .tab-name {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    line-height: 1.2;
+  }
+
+  .phase-tab.active {
+    border-color: var(--accent);
+    background: var(--accent-dim);
+  }
+  .phase-tab.active .tab-name { color: var(--accent); }
+
+  .phase-tab.done::after {
+    content: '✓';
+    position: absolute;
+    top: -6px; right: -6px;
+    width: 16px; height: 16px;
+    background: var(--green);
+    border-radius: 50%;
+    font-size: 9px;
+    display: flex; align-items: center; justify-content: center;
+    color: white;
+    font-weight: 700;
+  }
+
+  /* ── Panels ── */
+  .panel { display: none; animation: fadeUp 0.25s ease; }
+  .panel.active { display: block; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── Section label ── */
+  .section-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 10px;
+    margin-top: 20px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  /* ── Card ── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px;
+    margin-bottom: 12px;
+  }
+
+  /* ── Scanner ── */
+  .scanner-wrap {
+    position: relative;
+    border-radius: 14px;
+    overflow: hidden;
+    background: #000;
+    aspect-ratio: 4/3;
+    border: 2px solid var(--border);
+  }
+
+  #scanner-video {
+    width: 100%; height: 100%;
+    object-fit: cover; display: block;
+  }
+
+  .scanner-overlay {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    pointer-events: none;
+  }
+
+  .scan-frame {
+    width: 55%; aspect-ratio: 1; position: relative;
+  }
+
+  .scan-frame::before, .scan-frame::after,
+  .scan-frame .c3, .scan-frame .c4 {
+    content: ''; position: absolute;
+    width: 22px; height: 22px;
+    border-color: var(--accent); border-style: solid;
+  }
+  .scan-frame::before { top:0; left:0; border-width: 3px 0 0 3px; border-radius: 4px 0 0 0; }
+  .scan-frame::after  { top:0; right:0; border-width: 3px 3px 0 0; border-radius: 0 4px 0 0; }
+  .scan-frame .c3 { bottom:0; left:0; border-width: 0 0 3px 3px; border-radius: 0 0 0 4px; }
+  .scan-frame .c4 { bottom:0; right:0; border-width: 0 3px 3px 0; border-radius: 0 0 4px 0; }
+
+  .scan-line {
+    position: absolute; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    animation: scanMove 2s linear infinite;
+  }
+  @keyframes scanMove {
+    0% { top: 5%; opacity:1; } 90% { top: 95%; opacity:1; } 100% { top:95%; opacity:0; }
+  }
+
+  .scan-hint {
+    text-align: center; margin-top: 10px;
+    font-family: 'Space Mono', monospace;
+    font-size: 11px; color: var(--text-muted);
+  }
+
+  .btn-manual {
+    display: block; margin: 8px auto 0;
+    background: none; border: 1px solid var(--border);
+    border-radius: 8px; color: var(--text-muted);
+    font-family: 'Space Mono', monospace; font-size: 10px;
+    padding: 7px 14px; cursor: pointer; letter-spacing: 0.05em;
+    transition: all 0.2s;
+  }
+  .btn-manual:hover { border-color: var(--accent); color: var(--accent); }
+
+  .manual-row {
+    display: none; gap: 8px; margin-top: 8px;
+  }
+  .manual-row.show { display: flex; }
+  .manual-row input {
+    flex: 1; font-family: 'Space Mono', monospace; font-size: 12px;
+    background: var(--surface2); border: 1.5px solid var(--border);
+    border-radius: 8px; padding: 9px 12px; color: var(--text);
+  }
+  .manual-row button {
+    background: var(--accent); color: #000; border: none;
+    border-radius: 8px; padding: 9px 16px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 800; font-size: 13px; cursor: pointer;
+    white-space: nowrap;
+  }
+
+  /* ── Lote card ── */
+  .lote-card {
+    background: var(--surface2);
+    border: 1.5px solid var(--accent-dark);
+    border-radius: 12px; padding: 14px 16px;
+    margin-bottom: 12px; position: relative; overflow: hidden;
+  }
+  .lote-card::before {
+    content: ''; position: absolute;
+    top: 0; left: 0; width: 4px; height: 100%;
+    background: var(--accent);
+  }
+  .lote-card .lote-qr {
+    font-family: 'Space Mono', monospace; font-size: 11px;
+    color: var(--accent); letter-spacing: 0.1em; margin-bottom: 4px;
+  }
+  .lote-card h3 {
+    font-size: 22px; font-weight: 900;
+    text-transform: uppercase; line-height: 1;
+    margin-bottom: 8px;
+  }
+  .lote-meta {
+    display: flex; gap: 12px; flex-wrap: wrap;
+  }
+  .lote-meta .m {
+    font-size: 12px; color: var(--text-muted);
+    font-family: 'Space Mono', monospace;
+  }
+  .lote-meta .m strong { color: var(--text); }
+
+  /* ── Funcionários ── */
+  .func-grid {
+    display: flex; flex-wrap: wrap; gap: 8px;
+  }
+
+  .func-chip {
+    border: 1.5px solid var(--border);
+    border-radius: 20px; padding: 7px 14px;
+    font-size: 14px; font-weight: 700;
+    cursor: pointer; transition: all 0.2s;
+    color: var(--text-muted); user-select: none;
+    letter-spacing: 0.03em;
+  }
+  .func-chip:hover { border-color: var(--accent); color: var(--text); }
+  .func-chip.selected {
+    background: var(--accent); border-color: var(--accent);
+    color: #000;
+  }
+
+  /* ── Fields ── */
+  .field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+
+  label {
+    font-family: 'Space Mono', monospace; font-size: 10px;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--text-muted);
+    display: flex; align-items: center; gap: 4px;
+  }
+  label .req { color: var(--red); }
+
+  input[type="number"], input[type="text"] {
+    font-family: 'Barlow Condensed', sans-serif; font-size: 20px;
+    font-weight: 600;
+    background: var(--surface2); border: 1.5px solid var(--border);
+    border-radius: 10px; padding: 12px 14px; color: var(--text);
+    transition: border-color 0.2s; width: 100%; -webkit-appearance: none;
+  }
+  input:focus { outline: none; border-color: var(--accent); }
+
+  .field.has-error input { border-color: var(--red); background: var(--red-dim); }
+  .field.has-error .func-grid { outline: 2px solid var(--red); border-radius: 8px; }
+  .err-msg {
+    font-family: 'Space Mono', monospace; font-size: 10px;
+    color: var(--red); display: none;
+  }
+  .field.has-error .err-msg { display: block; }
+
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  /* ── Timer buttons ── */
+  .timer-block {
+    background: var(--surface2); border-radius: 12px;
+    padding: 14px; display: flex;
+    align-items: center; justify-content: space-between; gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  .timer-info .timer-label {
+    font-family: 'Space Mono', monospace; font-size: 10px;
+    color: var(--text-muted); letter-spacing: 0.1em;
+    text-transform: uppercase; margin-bottom: 4px;
+  }
+
+  .timer-info .timer-value {
+    font-family: 'Space Mono', monospace; font-size: 18px;
+    font-weight: 700; color: var(--text); letter-spacing: 0.05em;
+  }
+  .timer-info .timer-value.set { color: var(--green); }
+
+  .btn-timer {
+    border: none; border-radius: 10px; padding: 12px 20px;
+    font-family: 'Barlow Condensed', sans-serif; font-size: 15px;
+    font-weight: 800; letter-spacing: 0.05em; cursor: pointer;
+    transition: all 0.2s; white-space: nowrap; flex-shrink: 0;
+  }
+
+  .btn-timer.start {
+    background: var(--green); color: #000;
+  }
+  .btn-timer.start:disabled {
+    background: var(--green-dim); color: var(--green); cursor: not-allowed;
+  }
+  .btn-timer.end {
+    background: var(--red); color: white;
+  }
+  .btn-timer.end:disabled {
+    background: var(--red-dim); color: var(--red); cursor: not-allowed;
+  }
+
+  /* ── Final choice (Trituração x Fatiamento) ── */
+  .choice-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  .choice-card {
+    border: 2px solid var(--border); border-radius: 14px;
+    padding: 20px 12px; text-align: center; cursor: pointer;
+    transition: all 0.2s; user-select: none;
+  }
+  .choice-card .c-icon { font-size: 32px; margin-bottom: 8px; display: block; }
+  .choice-card .c-name {
+    font-size: 16px; font-weight: 900; text-transform: uppercase;
+    letter-spacing: 0.04em; color: var(--text-muted);
+  }
+  .choice-card:hover { border-color: var(--accent); }
+  .choice-card.selected { border-color: var(--accent); background: var(--accent-dim); }
+  .choice-card.selected .c-name { color: var(--accent); }
+
+  /* ── Submit ── */
+  .btn-primary {
+    width: 100%; background: var(--accent); color: #000;
+    border: none; border-radius: 12px; padding: 16px;
+    font-family: 'Barlow Condensed', sans-serif; font-size: 18px;
+    font-weight: 900; letter-spacing: 0.08em; text-transform: uppercase;
+    cursor: pointer; transition: all 0.2s; margin-top: 8px;
+  }
+  .btn-primary:hover { background: #ffb340; }
+  .btn-primary:disabled { background: var(--border); color: var(--text-muted); cursor: not-allowed; }
+
+  .btn-secondary {
+    width: 100%; background: none; color: var(--text-muted);
+    border: 1.5px solid var(--border); border-radius: 12px; padding: 14px;
+    font-family: 'Barlow Condensed', sans-serif; font-size: 16px;
+    font-weight: 700; letter-spacing: 0.05em; cursor: pointer;
+    transition: all 0.2s; margin-top: 8px;
+  }
+  .btn-secondary:hover { border-color: var(--text-muted); color: var(--text); }
+
+  /* ── Status ── */
+  .status-bar {
+    font-family: 'Space Mono', monospace; font-size: 10px;
+    color: var(--text-muted); text-align: center;
+    margin-top: 8px; min-height: 14px;
+  }
+  .status-bar.loading { color: var(--accent); }
+  .status-bar.error { color: var(--red); }
+  .status-bar.ok { color: var(--green); }
+
+  .spinner {
+    display: inline-block; width: 11px; height: 11px;
+    border: 2px solid currentColor; border-top-color: transparent;
+    border-radius: 50%; animation: spin 0.6s linear infinite;
+    vertical-align: middle; margin-right: 5px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── QR result ── */
+  .qr-result {
+    text-align: center; padding: 20px;
+    background: var(--surface2); border-radius: 14px;
+    border: 1.5px solid var(--green); margin-bottom: 12px;
+  }
+  .qr-result .qr-box { display: flex; justify-content: center; margin: 12px 0; }
+  .qr-result .qr-code-label {
+    font-family: 'Space Mono', monospace; font-size: 14px;
+    font-weight: 700; color: var(--green); letter-spacing: 0.1em;
+  }
+  .qr-result .qr-desc {
+    font-size: 13px; color: var(--text-muted);
+    font-family: 'Space Mono', monospace; margin-top: 4px;
+  }
+
+  /* ── Config ── */
+  .config-section {
+    margin-top: 40px; padding-top: 20px;
+    border-top: 1px solid var(--border);
+  }
+
+  .config-section input {
+    font-family: 'Space Mono', monospace; font-size: 11px;
+    background: var(--surface2); border: 1.5px solid var(--border);
+    border-radius: 8px; padding: 9px 12px; color: var(--text);
+    width: 100%; margin-top: 5px;
+  }
+
+  /* ── Print ── */
+  .print-area { display: none; }
+
+  @media print {
+    body * { visibility: hidden; }
+    .print-area, .print-area * { visibility: visible; }
+    .print-area {
+      display: block !important;
+      position: fixed; top: 0; left: 0;
+      background: white; padding: 10px;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .phase-tabs { grid-template-columns: repeat(2, 1fr); }
+    .field-row { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-icon">🥦</div>
+  <div>
+    <h1>Preparo Intermediários</h1>
+    <div class="sub">Registro de processo · Vegetais</div>
+  </div>
+</header>
+
+<div class="container">
+
+  <!-- Phase tabs -->
+  <div class="phase-tabs">
+    <div class="phase-tab active" id="tab-limpeza" onclick="selectPhase('limpeza')">
+      <span class="tab-icon">🚿</span>
+      <span class="tab-name">Limpeza</span>
+    </div>
+    <div class="phase-tab" id="tab-cozinha" onclick="selectPhase('cozinha')">
+      <span class="tab-icon">🍳</span>
+      <span class="tab-name">Cozinha</span>
+    </div>
+    <div class="phase-tab" id="tab-final" onclick="selectPhase('final')">
+      <span class="tab-icon">⚙️</span>
+      <span class="tab-name">Final</span>
+    </div>
+    <div class="phase-tab" id="tab-config" onclick="selectPhase('config')">
+      <span class="tab-icon">⚙️</span>
+      <span class="tab-name">Config</span>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════ -->
+  <!-- PANEL: LIMPEZA                        -->
+  <!-- ══════════════════════════════════════ -->
+  <div class="panel active" id="panel-limpeza">
+
+    <div class="section-label">01 — Equipe</div>
+    <div class="card">
+      <div class="field" id="field-funcionarios">
+        <label>Selecione quem vai trabalhar <span class="req">*</span></label>
+        <div class="func-grid" id="func-grid"></div>
+        <span class="err-msg">Selecione ao menos um funcionário</span>
+      </div>
+    </div>
+
+    <div class="section-label">02 — Escanear lote</div>
+    <div class="card">
+      <div class="scanner-wrap" id="sw-limpeza">
+        <video id="video-limpeza" autoplay playsinline muted></video>
+        <div class="scanner-overlay">
+          <div class="scan-frame">
+            <span class="c3"></span><span class="c4"></span>
+            <div class="scan-line"></div>
+          </div>
+        </div>
+      </div>
+      <div class="scan-hint">Aponte para o QR Code do lote</div>
+      <button class="btn-manual" onclick="toggleManual('limpeza')">✎ Digitar código</button>
+      <div class="manual-row" id="manual-limpeza">
+        <input type="text" id="manual-input-limpeza" placeholder="MP-00001" />
+        <button onclick="buscarLote('limpeza', document.getElementById('manual-input-limpeza').value)">Buscar</button>
+      </div>
+      <div class="status-bar" id="status-scan-limpeza"></div>
+    </div>
+
+    <!-- Aparece após escanear -->
+    <div id="lote-limpeza-card" style="display:none">
+      <div class="lote-card">
+        <div class="lote-qr" id="lc-qr">—</div>
+        <h3 id="lc-produto">—</h3>
+        <div class="lote-meta">
+          <div class="m">Fornecedor: <strong id="lc-forn">—</strong></div>
+          <div class="m">Qtd: <strong id="lc-qtd">—</strong></div>
+          <div class="m">Val: <strong id="lc-val">—</strong></div>
+        </div>
+      </div>
+
+      <div class="section-label">03 — Registro</div>
+      <div class="card">
+        <div class="timer-block">
+          <div class="timer-info">
+            <div class="timer-label">Horário Início</div>
+            <div class="timer-value" id="tv-inicio-limpeza">—</div>
+          </div>
+          <button class="btn-timer start" id="btn-inicio-limpeza" onclick="registrarHora('inicio', 'limpeza')">▶ INICIAR</button>
+        </div>
+        <div class="field-row">
+          <div class="field" id="field-qtd-inicial">
+            <label>Qtd Inicial (kg) <span class="req">*</span></label>
+            <input type="number" id="qtd-inicial" placeholder="0.0" step="0.1" min="0" />
+            <span class="err-msg">Obrigatório</span>
+          </div>
+          <div class="field" id="field-qtd-final">
+            <label>Qtd Final (kg) <span class="req">*</span></label>
+            <input type="number" id="qtd-final" placeholder="0.0" step="0.1" min="0" />
+            <span class="err-msg">Obrigatório</span>
+          </div>
+        </div>
+        <div class="timer-block">
+          <div class="timer-info">
+            <div class="timer-label">Horário Fim</div>
+            <div class="timer-value" id="tv-fim-limpeza">—</div>
+          </div>
+          <button class="btn-timer end" id="btn-fim-limpeza" onclick="registrarHora('fim', 'limpeza')">■ FINALIZAR</button>
+        </div>
+      </div>
+
+      <button class="btn-primary" onclick="salvar('limpeza')">✓ Salvar Limpeza</button>
+      <div class="status-bar" id="status-limpeza"></div>
+    </div>
+
+  </div>
+
+  <!-- ══════════════════════════════════════ -->
+  <!-- PANEL: COZINHA                        -->
+  <!-- ══════════════════════════════════════ -->
+  <div class="panel" id="panel-cozinha">
+
+    <div class="section-label">01 — Escanear lote</div>
+    <div class="card">
+      <div class="scanner-wrap">
+        <video id="video-cozinha" autoplay playsinline muted></video>
+        <div class="scanner-overlay">
+          <div class="scan-frame">
+            <span class="c3"></span><span class="c4"></span>
+            <div class="scan-line"></div>
+          </div>
+        </div>
+      </div>
+      <div class="scan-hint">Aponte para o QR Code do lote</div>
+      <button class="btn-manual" onclick="toggleManual('cozinha')">✎ Digitar código</button>
+      <div class="manual-row" id="manual-cozinha">
+        <input type="text" id="manual-input-cozinha" placeholder="MP-00001" />
+        <button onclick="buscarLote('cozinha', document.getElementById('manual-input-cozinha').value)">Buscar</button>
+      </div>
+      <div class="status-bar" id="status-scan-cozinha"></div>
+    </div>
+
+    <div id="lote-cozinha-card" style="display:none">
+      <div class="lote-card">
+        <div class="lote-qr" id="cc-qr">—</div>
+        <h3 id="cc-produto">—</h3>
+        <div class="lote-meta">
+          <div class="m">Fornecedor: <strong id="cc-forn">—</strong></div>
+          <div class="m">Qtd: <strong id="cc-qtd">—</strong></div>
+        </div>
+      </div>
+
+      <div class="section-label">02 — Registro</div>
+      <div class="card">
+        <div class="timer-block">
+          <div class="timer-info">
+            <div class="timer-label">Horário Início</div>
+            <div class="timer-value" id="tv-inicio-cozinha">—</div>
+          </div>
+          <button class="btn-timer start" id="btn-inicio-cozinha" onclick="registrarHora('inicio', 'cozinha')">▶ INICIAR</button>
+        </div>
+        <div class="field-row">
+          <div class="field" id="field-temperatura">
+            <label>Temperatura (°C) <span class="req">*</span></label>
+            <input type="number" id="temperatura" placeholder="0" step="1" min="0" />
+            <span class="err-msg">Obrigatório</span>
+          </div>
+          <div class="field" id="field-tempo">
+            <label>Tempo (min) <span class="req">*</span></label>
+            <input type="number" id="tempo" placeholder="0" step="1" min="0" />
+            <span class="err-msg">Obrigatório</span>
+          </div>
+        </div>
+        <div class="timer-block">
+          <div class="timer-info">
+            <div class="timer-label">Horário Fim</div>
+            <div class="timer-value" id="tv-fim-cozinha">—</div>
+          </div>
+          <button class="btn-timer end" id="btn-fim-cozinha" onclick="registrarHora('fim', 'cozinha')">■ FINALIZAR</button>
+        </div>
+      </div>
+
+      <button class="btn-primary" onclick="salvar('cozinha')">✓ Salvar Cozinha</button>
+      <div class="status-bar" id="status-cozinha"></div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════ -->
+  <!-- PANEL: FINAL (Trituração/Fatiamento)  -->
+  <!-- ══════════════════════════════════════ -->
+  <div class="panel" id="panel-final">
+
+    <div class="section-label">01 — Escanear lote</div>
+    <div class="card">
+      <div class="scanner-wrap">
+        <video id="video-final" autoplay playsinline muted></video>
+        <div class="scanner-overlay">
+          <div class="scan-frame">
+            <span class="c3"></span><span class="c4"></span>
+            <div class="scan-line"></div>
+          </div>
+        </div>
+      </div>
+      <div class="scan-hint">Aponte para o QR Code do lote</div>
+      <button class="btn-manual" onclick="toggleManual('final')">✎ Digitar código</button>
+      <div class="manual-row" id="manual-final">
+        <input type="text" id="manual-input-final" placeholder="MP-00001" />
+        <button onclick="buscarLote('final', document.getElementById('manual-input-final').value)">Buscar</button>
+      </div>
+      <div class="status-bar" id="status-scan-final"></div>
+    </div>
+
+    <div id="lote-final-card" style="display:none">
+      <div class="lote-card">
+        <div class="lote-qr" id="fc-qr">—</div>
+        <h3 id="fc-produto">—</h3>
+        <div class="lote-meta">
+          <div class="m">Fornecedor: <strong id="fc-forn">—</strong></div>
+          <div class="m">Qtd: <strong id="fc-qtd">—</strong></div>
+        </div>
+      </div>
+
+    <div class="section-label">02 — Tipo de processo</div>
+    <div class="choice-grid">
+      <div class="choice-card" id="choice-triturar" onclick="selectFinal('triturar')">
+        <span class="c-icon">🔄</span>
+        <span class="c-name">Trituração</span>
+      </div>
+      <div class="choice-card" id="choice-fatiar" onclick="selectFinal('fatiar')">
+        <span class="c-icon">🔪</span>
+        <span class="c-name">Fatiamento</span>
+      </div>
+    </div>
+
+    <div class="section-label">03 — Registro</div>
+    <div class="card">
+      <div class="timer-block">
+        <div class="timer-info">
+          <div class="timer-label">Horário Início</div>
+          <div class="timer-value" id="tv-inicio-final">—</div>
+        </div>
+        <button class="btn-timer start" id="btn-inicio-final" onclick="registrarHora('inicio', 'final')">▶ INICIAR</button>
+      </div>
+
+      <div id="fields-triturar" style="display:none">
+        <div class="field" id="field-kg-massa">
+          <label>Kg Massa Bruta <span class="req">*</span></label>
+          <input type="number" id="kg-massa" placeholder="0.0" step="0.1" min="0" />
+          <span class="err-msg">Obrigatório</span>
+        </div>
+      </div>
+
+      <div id="fields-fatiar" style="display:none">
+        <div class="field" id="field-qtd-fatiamento">
+          <label>Quantidade <span class="req">*</span></label>
+          <input type="number" id="qtd-fatiamento" placeholder="0.0" step="0.1" min="0" />
+          <span class="err-msg">Obrigatório</span>
+        </div>
+      </div>
+
+      <div class="timer-block">
+        <div class="timer-info">
+          <div class="timer-label">Horário Fim</div>
+          <div class="timer-value" id="tv-fim-final">—</div>
+        </div>
+        <button class="btn-timer end" id="btn-fim-final" onclick="registrarHora('fim', 'final')">■ FINALIZAR</button>
+      </div>
+    </div>
+
+    <div id="qr-result-final" style="display:none">
+      <div class="qr-result">
+        <div class="qr-desc">QR Code gerado</div>
+        <div class="qr-box" id="qr-box-final"></div>
+        <div class="qr-code-label" id="qr-code-label-final">—</div>
+        <button onclick="imprimirQR('final')" style="margin-top:12px; background:var(--accent); color:#000; border:none; border-radius:8px; padding:9px 20px; font-family:'Barlow Condensed',sans-serif; font-weight:800; font-size:14px; cursor:pointer; letter-spacing:0.05em;">🖨️ IMPRIMIR ETIQUETA</button>
+      </div>
+      <button class="btn-secondary" onclick="resetFase('final')">+ Nova operação</button>
+    </div>
+
+    <div id="btn-salvar-final-wrap">
+      <button class="btn-primary" onclick="salvar('final')">✓ Salvar</button>
+      <div class="status-bar" id="status-final"></div>
+    </div>
+    </div><!-- /lote-final-card -->
+  </div>
+
+  <!-- ══════════════════════════════════════ -->
+  <!-- PANEL: CONFIG                         -->
+  <!-- ══════════════════════════════════════ -->
+  <div class="panel" id="panel-config">
+    <div class="section-label">Configuração — Google Sheets</div>
+    <div class="card">
+      <div class="field">
+        <label>ID da Planilha</label>
+        <input type="text" id="cfg-sheet-id" placeholder="ID do Google Sheets" oninput="salvarConfig()" style="font-family:'Space Mono',monospace;font-size:11px;background:var(--surface2);border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);width:100%;margin-top:5px;" />
+      </div>
+      <div class="field" style="margin-top:12px">
+        <label>URL do Apps Script</label>
+        <input type="text" id="cfg-script-url" placeholder="https://script.google.com/macros/s/..." oninput="salvarConfig()" style="font-family:'Space Mono',monospace;font-size:11px;background:var(--surface2);border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);width:100%;margin-top:5px;" />
+        <div style="font-size:10px;color:var(--text-muted);font-family:'Space Mono',monospace;margin-top:4px;">Use a mesma URL do Apps Script dos outros módulos</div>
+      </div>
+    </div>
+
+    <div class="section-label">Código Apps Script</div>
+    <div class="card" style="background:#111;border-color:#333">
+      <div style="font-size:11px;color:#8e8e93;font-family:'Space Mono',monospace;margin-bottom:8px;">Adicione estas funções ao seu Apps Script existente:</div>
+      <details>
+        <summary style="cursor:pointer;font-size:11px;font-family:'Space Mono',monospace;color:var(--accent);letter-spacing:0.08em;">VER CÓDIGO ▾</summary>
+        <pre style="background:#0a0a0a;color:#b8d4b0;padding:14px;border-radius:8px;font-size:10px;margin-top:10px;overflow-x:auto;white-space:pre-wrap;border:1px solid #333">
+// Adicione ao doPost existente, dentro do try:
+
+// ── Buscar funcionários ──
+if (data.tipo === 'funcionarios') {
+  var ss = SpreadsheetApp.openById(data.sheetId);
+  var sheet = ss.getSheetByName('Funcionárioss');
+  var vals = sheet.getRange('A1:A50').getValues();
+  var lista = vals.map(r => r[0]).filter(v => v && v !== '');
+  return ok({funcionarios: lista});
+}
+
+// ── Salvar Limpeza ──
+if (data.tipo === 'limpeza') {
+  var ss = SpreadsheetApp.openById(data.sheetId);
+  var sheet = ss.getSheetByName('Limpeza');
+  var id = sheet.getLastRow() < 1 ? 1 : sheet.getLastRow();
+  sheet.appendRow([id, data.qrCode, data.qtdInicial,
+    data.horaInicio, data.qtdFinal, data.horaFim, data.funcionarios]);
+  return ok({id: id});
+}
+
+// ── Salvar Cozinha ──
+if (data.tipo === 'cozinha') {
+  var ss = SpreadsheetApp.openById(data.sheetId);
+  var sheet = ss.getSheetByName('Cozinha');
+  var id = sheet.getLastRow() < 1 ? 1 : sheet.getLastRow();
+  sheet.appendRow([id, data.qrCode, data.horaInicio,
+    data.temperatura, data.tempo, data.horaFim]);
+  return ok({id: id});
+}
+
+// ── Salvar Trituração ──
+if (data.tipo === 'trituração') {
+  var ss = SpreadsheetApp.openById(data.sheetId);
+  var sheet = ss.getSheetByName('Trituração');
+  var id = sheet.getLastRow() < 1 ? 1 : sheet.getLastRow();
+  var qrNovo = 'MB-' + String(id).padStart(5,'0');
+  sheet.appendRow([id, data.qrCode, data.horaInicio,
+    data.horaFim, data.kgMassa, qrNovo]);
+  return ok({id: id, qrNovo: qrNovo});
+}
+
+// ── Salvar Fatiamento ──
+if (data.tipo === 'fatiamento') {
+  var ss = SpreadsheetApp.openById(data.sheetId);
+  var sheet = ss.getSheetByName('Fatiamento e Bandejamento');
+  var id = sheet.getLastRow() < 1 ? 1 : sheet.getLastRow();
+  var qrNovo = 'FT-' + String(id).padStart(5,'0');
+  sheet.appendRow([id, data.qrCode, data.quantidade,
+    data.horaInicio, data.horaFim, qrNovo]);
+  return ok({id: id, qrNovo: qrNovo});
+}
+        </pre>
+      </details>
+    </div>
+  </div>
+
+</div><!-- /container -->
+
+<!-- Print area -->
+<div class="print-area" id="print-area">
+  <div style="text-align:center;font-family:monospace;padding:6px;background:white">
+    <div style="font-size:9px;text-transform:uppercase;letter-spacing:2px;margin-bottom:3px" id="pa-tipo">Intermediário</div>
+    <div style="font-size:13px;font-weight:bold;margin-bottom:2px" id="pa-produto"></div>
+    <div id="pa-qr"></div>
+    <div style="font-size:11px;margin-top:3px;letter-spacing:1px;font-weight:bold" id="pa-code"></div>
+    <div style="font-size:8px;color:#555;margin-top:2px" id="pa-data"></div>
+  </div>
+</div>
+
+<script>
+// ─── Config ──────────────────────────────────────────────
+const FUNCIONARIOS_DEFAULT = ['Adilson','Magno','Ney','Aline','Jean','Thiago','Hugo','Andrew','Breno'];
+
+window.onload = async function() {
+  document.getElementById('cfg-sheet-id').value = localStorage.getItem('prep_sheet_id') || '';
+  document.getElementById('cfg-script-url').value = localStorage.getItem('prep_script_url') || '';
+  await carregarFuncionarios();
+  iniciarScanner('limpeza');
+};
+
+function salvarConfig() {
+  localStorage.setItem('prep_sheet_id', document.getElementById('cfg-sheet-id').value.trim());
+  localStorage.setItem('prep_script_url', document.getElementById('cfg-script-url').value.trim());
+}
+
+// ─── Funcionários ─────────────────────────────────────────
+let funcionariosSelecionados = [];
+
+async function carregarFuncionarios() {
+  const scriptUrl = localStorage.getItem('prep_script_url') || '';
+  const sheetId = localStorage.getItem('prep_sheet_id') || '';
+  let lista = FUNCIONARIOS_DEFAULT;
+
+  if (scriptUrl && sheetId) {
+    try {
+      const resp = await fetch(scriptUrl, {
+        method: 'POST',
+        body: JSON.stringify({ tipo: 'funcionarios', sheetId })
+      });
+      const result = await resp.json();
+      if (result.success && result.funcionarios?.length) lista = result.funcionarios;
+    } catch(e) { /* usa default */ }
+  }
+
+  const grid = document.getElementById('func-grid');
+  grid.innerHTML = '';
+  lista.forEach(nome => {
+    const chip = document.createElement('div');
+    chip.className = 'func-chip';
+    chip.textContent = nome;
+    chip.onclick = () => toggleFuncionario(chip, nome);
+    grid.appendChild(chip);
+  });
+}
+
+function toggleFuncionario(chip, nome) {
+  const idx = funcionariosSelecionados.indexOf(nome);
+  if (idx === -1) {
+    funcionariosSelecionados.push(nome);
+    chip.classList.add('selected');
+  } else {
+    funcionariosSelecionados.splice(idx, 1);
+    chip.classList.remove('selected');
+  }
+  document.getElementById('field-funcionarios').classList.remove('has-error');
+}
+
+// ─── Phase tabs ───────────────────────────────────────────
+const phases = ['limpeza', 'cozinha', 'final', 'config'];
+let activeScanner = null;
+
+function selectPhase(phase) {
+  phases.forEach(p => {
+    document.getElementById('tab-' + p)?.classList.remove('active');
+    document.getElementById('panel-' + p)?.classList.remove('active');
+  });
+  document.getElementById('tab-' + phase)?.classList.add('active');
+  document.getElementById('panel-' + phase)?.classList.add('active');
+
+  // manage scanner
+  stopAllScanners();
+  if (phase !== 'config') iniciarScanner(phase);
+}
+
+// ─── Scanner ─────────────────────────────────────────────
+let streams = {};
+let intervals = {};
+
+async function iniciarScanner(fase) {
+  const videoId = 'video-' + fase;
+  const video = document.getElementById(videoId);
+  if (!video) return;
+
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+    streams[fase] = stream;
+    video.srcObject = stream;
+    video.play();
+    intervals[fase] = setInterval(() => scanFrame(fase), 350);
+  } catch(e) {
+    setScanStatus(fase, 'Câmera indisponível. Use o campo manual.', 'error');
+    document.getElementById('manual-' + fase)?.classList.add('show');
+  }
+}
+
+function stopAllScanners() {
+  Object.keys(streams).forEach(fase => {
+    if (streams[fase]) { streams[fase].getTracks().forEach(t => t.stop()); delete streams[fase]; }
+    if (intervals[fase]) { clearInterval(intervals[fase]); delete intervals[fase]; }
+  });
+}
+
+function scanFrame(fase) {
+  const video = document.getElementById('video-' + fase);
+  if (!video || video.readyState !== video.HAVE_ENOUGH_DATA) return;
+  const canvas = document.createElement('canvas');
+  canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+  canvas.getContext('2d').drawImage(video, 0, 0);
+  const img = canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height);
+  const code = jsQR(img.data, img.width, img.height);
+  if (code?.data) {
+    if (streams[fase]) { streams[fase].getTracks().forEach(t => t.stop()); delete streams[fase]; }
+    if (intervals[fase]) { clearInterval(intervals[fase]); delete intervals[fase]; }
+    buscarLote(fase, code.data);
+  }
+}
+
+function toggleManual(fase) {
+  document.getElementById('manual-' + fase)?.classList.toggle('show');
+}
+
+// ─── Lote data ────────────────────────────────────────────
+let lotes = {};
+
+async function buscarLote(fase, qrCode) {
+  if (!qrCode.trim()) return;
+  qrCode = qrCode.trim().toUpperCase();
+  setScanStatus(fase, '<span class="spinner"></span>Buscando ' + qrCode + '...', 'loading');
+
+  const scriptUrl = localStorage.getItem('prep_script_url') || '';
+  const sheetId = localStorage.getItem('prep_sheet_id') || '';
+
+  let entry;
+  if (!scriptUrl || !sheetId) {
+    entry = { qrCode, produto: 'Batata Doce', fornecedor: 'Demo', quantidade: '50', unidade: 'Kg', validade: '2025-04-30' };
+  } else {
+    try {
+      const resp = await fetch(scriptUrl, {
+        method: 'POST', body: JSON.stringify({ tipo: 'buscar', sheetId, qrCode })
+      });
+      const result = await resp.json();
+      if (result.success && result.encontrado) { entry = result; }
+      else { setScanStatus(fase, 'QR não encontrado: ' + qrCode, 'error'); return; }
+    } catch(e) { setScanStatus(fase, 'Erro de conexão.', 'error'); return; }
+  }
+
+  lotes[fase] = entry;
+  preencherLote(fase, entry);
+}
+
+function preencherLote(fase, e) {
+  setScanStatus(fase, '', '');
+
+  if (fase === 'limpeza') {
+    document.getElementById('lc-qr').textContent = e.qrCode;
+    document.getElementById('lc-produto').textContent = e.produto;
+    document.getElementById('lc-forn').textContent = e.fornecedor;
+    document.getElementById('lc-qtd').textContent = (e.quantidade||'—') + ' ' + (e.unidade||'');
+    document.getElementById('lc-val').textContent = e.validade || '—';
+    document.getElementById('lote-limpeza-card').style.display = 'block';
+  } else if (fase === 'cozinha') {
+    document.getElementById('cc-qr').textContent = e.qrCode;
+    document.getElementById('cc-produto').textContent = e.produto;
+    document.getElementById('cc-forn').textContent = e.fornecedor;
+    document.getElementById('cc-qtd').textContent = (e.quantidade||'—') + ' ' + (e.unidade||'');
+    document.getElementById('lote-cozinha-card').style.display = 'block';
+  } else if (fase === 'final') {
+    document.getElementById('fc-qr').textContent = e.qrCode;
+    document.getElementById('fc-produto').textContent = e.produto;
+    document.getElementById('fc-forn').textContent = e.fornecedor;
+    document.getElementById('fc-qtd').textContent = (e.quantidade||'—') + ' ' + (e.unidade||'');
+    document.getElementById('lote-final-card').style.display = 'block';
+  }
+}
+
+// ─── Timers ───────────────────────────────────────────────
+let timers = {};
+
+function registrarHora(tipo, fase) {
+  const now = new Date();
+  const hh = String(now.getHours()).padStart(2,'0');
+  const mm = String(now.getMinutes()).padStart(2,'0');
+  const ss = String(now.getSeconds()).padStart(2,'0');
+  const hora = hh + ':' + mm + ':' + ss;
+
+  if (!timers[fase]) timers[fase] = {};
+  timers[fase][tipo] = hora;
+
+  const tvId = 'tv-' + tipo + '-' + fase;
+  const btnId = 'btn-' + tipo + '-' + fase;
+  document.getElementById(tvId).textContent = hora;
+  document.getElementById(tvId).classList.add('set');
+  document.getElementById(btnId).disabled = true;
+}
+
+// ─── Final phase choice ───────────────────────────────────
+let finalChoice = null;
+
+function selectFinal(tipo) {
+  finalChoice = tipo;
+  ['triturar','fatiar'].forEach(t => document.getElementById('choice-' + t).classList.remove('selected'));
+  document.getElementById('choice-' + tipo).classList.add('selected');
+  document.getElementById('fields-triturar').style.display = tipo === 'triturar' ? 'block' : 'none';
+  document.getElementById('fields-fatiar').style.display = tipo === 'fatiar' ? 'block' : 'none';
+}
+
+// ─── Save ─────────────────────────────────────────────────
+async function salvar(fase) {
+  if (!validar(fase)) return;
+
+  const scriptUrl = localStorage.getItem('prep_script_url') || '';
+  const sheetId = localStorage.getItem('prep_sheet_id') || '';
+  const lote = lotes[fase] || {};
+  const t = timers[fase] || {};
+
+  let payload = { sheetId };
+
+  if (fase === 'limpeza') {
+    payload.tipo = 'limpeza';
+    payload.qrCode = lote.qrCode;
+    payload.qtdInicial = document.getElementById('qtd-inicial').value;
+    payload.qtdFinal = document.getElementById('qtd-final').value;
+    payload.horaInicio = t.inicio || '';
+    payload.horaFim = t.fim || '';
+    payload.funcionarios = funcionariosSelecionados.join(', ');
+  } else if (fase === 'cozinha') {
+    payload.tipo = 'cozinha';
+    payload.qrCode = lote.qrCode;
+    payload.temperatura = document.getElementById('temperatura').value;
+    payload.tempo = document.getElementById('tempo').value;
+    payload.horaInicio = t.inicio || '';
+    payload.horaFim = t.fim || '';
+  } else if (fase === 'final') {
+    payload.tipo = finalChoice === 'triturar' ? 'trituração' : 'fatiamento';
+    payload.qrCode = lote.qrCode;
+    payload.horaInicio = t.inicio || '';
+    payload.horaFim = t.fim || '';
+    if (finalChoice === 'triturar') payload.kgMassa = document.getElementById('kg-massa').value;
+    else payload.quantidade = document.getElementById('qtd-fatiamento').value;
+  }
+
+  if (!scriptUrl || !sheetId) {
+    const fakeQr = (finalChoice === 'triturar' ? 'MB-' : 'FT-') + '00001';
+    if (fase === 'final') mostrarQR(fase, fakeQr, lote.produto);
+    else { setStatus(fase, '✓ Salvo (modo demonstração)', 'ok'); setTimeout(() => resetFase(fase), 2000); }
+    return;
+  }
+
+  setStatus(fase, '<span class="spinner"></span>Salvando...', 'loading');
+
+  try {
+    const resp = await fetch(scriptUrl, { method: 'POST', body: JSON.stringify(payload) });
+    const result = await resp.json();
+    if (result.success) {
+      if (fase === 'final' && result.qrNovo) mostrarQR(fase, result.qrNovo, lote.produto);
+      else { setStatus(fase, '✓ Salvo com sucesso!', 'ok'); setTimeout(() => resetFase(fase), 2000); }
+    } else {
+      setStatus(fase, 'Erro: ' + (result.error || 'Falha'), 'error');
+    }
+  } catch(e) {
+    setStatus(fase, 'Erro de conexão.', 'error');
+  }
+}
+
+function mostrarQR(fase, qrCode, produto) {
+  document.getElementById('qr-result-final').style.display = 'block';
+  document.getElementById('btn-salvar-final-wrap').style.display = 'none';
+  document.getElementById('qr-code-label-final').textContent = qrCode;
+
+  const box = document.getElementById('qr-box-final');
+  box.innerHTML = '';
+  new QRCode(box, { text: qrCode, width: 140, height: 140, colorDark: '#ffffff', colorLight: '#1c1c1e', correctLevel: QRCode.CorrectLevel.H });
+
+  // store for print
+  window._lastQR = { qrCode, produto, tipo: finalChoice };
+}
+
+function imprimirQR(fase) {
+  const d = window._lastQR || {};
+  document.getElementById('pa-tipo').textContent = d.tipo === 'triturar' ? 'Massa Bruta' : 'Fatiado';
+  document.getElementById('pa-produto').textContent = d.produto || '';
+  document.getElementById('pa-code').textContent = d.qrCode || '';
+  document.getElementById('pa-data').textContent = new Date().toLocaleDateString('pt-BR');
+  document.getElementById('pa-qr').innerHTML = '';
+  new QRCode(document.getElementById('pa-qr'), { text: d.qrCode || 'X', width: 110, height: 110, colorDark: '#000000', colorLight: '#ffffff' });
+  setTimeout(() => window.print(), 300);
+}
+
+// ─── Validation ───────────────────────────────────────────
+function validar(fase) {
+  let ok = true;
+
+  if (fase === 'limpeza') {
+    if (!funcionariosSelecionados.length) {
+      document.getElementById('field-funcionarios').classList.add('has-error'); ok = false;
+    }
+    if (!document.getElementById('qtd-inicial').value) {
+      document.getElementById('field-qtd-inicial').classList.add('has-error'); ok = false;
+    } else document.getElementById('field-qtd-inicial').classList.remove('has-error');
+    if (!document.getElementById('qtd-final').value) {
+      document.getElementById('field-qtd-final').classList.add('has-error'); ok = false;
+    } else document.getElementById('field-qtd-final').classList.remove('has-error');
+    if (!timers.limpeza?.inicio || !timers.limpeza?.fim) {
+      setStatus('limpeza', 'Registre os horários de início e fim.', 'error'); ok = false;
+    }
+  } else if (fase === 'cozinha') {
+    if (!document.getElementById('temperatura').value) {
+      document.getElementById('field-temperatura').classList.add('has-error'); ok = false;
+    } else document.getElementById('field-temperatura').classList.remove('has-error');
+    if (!document.getElementById('tempo').value) {
+      document.getElementById('field-tempo').classList.add('has-error'); ok = false;
+    } else document.getElementById('field-tempo').classList.remove('has-error');
+    if (!timers.cozinha?.inicio || !timers.cozinha?.fim) {
+      setStatus('cozinha', 'Registre os horários de início e fim.', 'error'); ok = false;
+    }
+  } else if (fase === 'final') {
+    if (!finalChoice) { setStatus('final', 'Selecione Trituração ou Fatiamento.', 'error'); ok = false; }
+    else if (finalChoice === 'triturar' && !document.getElementById('kg-massa').value) {
+      document.getElementById('field-kg-massa').classList.add('has-error'); ok = false;
+    } else if (finalChoice === 'fatiar' && !document.getElementById('qtd-fatiamento').value) {
+      document.getElementById('field-qtd-fatiamento').classList.add('has-error'); ok = false;
+    }
+    if (!timers.final?.inicio || !timers.final?.fim) {
+      setStatus('final', 'Registre os horários de início e fim.', 'error'); ok = false;
+    }
+  }
+
+  return ok;
+}
+
+// ─── Reset ────────────────────────────────────────────────
+function resetFase(fase) {
+  lotes[fase] = null;
+  timers[fase] = {};
+
+  if (fase === 'limpeza') {
+    document.getElementById('lote-limpeza-card').style.display = 'none';
+    document.getElementById('tv-inicio-limpeza').textContent = '—';
+    document.getElementById('tv-fim-limpeza').textContent = '—';
+    document.getElementById('tv-inicio-limpeza').classList.remove('set');
+    document.getElementById('tv-fim-limpeza').classList.remove('set');
+    document.getElementById('btn-inicio-limpeza').disabled = false;
+    document.getElementById('btn-fim-limpeza').disabled = false;
+    document.getElementById('qtd-inicial').value = '';
+    document.getElementById('qtd-final').value = '';
+    funcionariosSelecionados = [];
+    document.querySelectorAll('.func-chip').forEach(c => c.classList.remove('selected'));
+  } else if (fase === 'cozinha') {
+    document.getElementById('lote-cozinha-card').style.display = 'none';
+    document.getElementById('tv-inicio-cozinha').textContent = '—';
+    document.getElementById('tv-fim-cozinha').textContent = '—';
+    document.getElementById('tv-inicio-cozinha').classList.remove('set');
+    document.getElementById('tv-fim-cozinha').classList.remove('set');
+    document.getElementById('btn-inicio-cozinha').disabled = false;
+    document.getElementById('btn-fim-cozinha').disabled = false;
+    document.getElementById('temperatura').value = '';
+    document.getElementById('tempo').value = '';
+  } else if (fase === 'final') {
+    document.getElementById('lote-final-card').style.display = 'none';
+    document.getElementById('tv-inicio-final').textContent = '—';
+    document.getElementById('tv-fim-final').textContent = '—';
+    document.getElementById('tv-inicio-final').classList.remove('set');
+    document.getElementById('tv-fim-final').classList.remove('set');
+    document.getElementById('btn-inicio-final').disabled = false;
+    document.getElementById('btn-fim-final').disabled = false;
+    document.getElementById('kg-massa').value = '';
+    document.getElementById('qtd-fatiamento').value = '';
+    document.getElementById('qr-result-final').style.display = 'none';
+    document.getElementById('btn-salvar-final-wrap').style.display = 'block';
+    finalChoice = null;
+    ['triturar','fatiar'].forEach(t => document.getElementById('choice-' + t).classList.remove('selected'));
+    document.getElementById('fields-triturar').style.display = 'none';
+    document.getElementById('fields-fatiar').style.display = 'none';
+  }
+
+  document.querySelectorAll('#panel-' + fase + ' .has-error').forEach(el => el.classList.remove('has-error'));
+  setStatus(fase, '', '');
+  iniciarScanner(fase);
+}
+
+// ─── Utils ────────────────────────────────────────────────
+function setScanStatus(fase, msg, type) {
+  const el = document.getElementById('status-scan-' + fase);
+  if (el) { el.innerHTML = msg; el.className = 'status-bar ' + (type||''); }
+}
+
+function setStatus(fase, msg, type) {
+  const el = document.getElementById('status-' + fase);
+  if (el) { el.innerHTML = msg; el.className = 'status-bar ' + (type||''); }
+}
+</script>
+</body>
+</html>
