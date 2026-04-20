@@ -717,22 +717,43 @@ async function salvarEntrada() {
 
   setStatus('<span class="spinner"></span>Salvando...', 'loading');
   document.getElementById('btn-salvar').disabled = true;
-
-  try {
-    const url = scriptUrl + '?payload=' + encodeURIComponent(JSON.stringify(data));
-    const resp = await fetch(url);
-    const result = await resp.json();
-
-    if (result.success) {
+  chamarScript(scriptUrl, data, function(result) {
+    if (result && result.success) {
       showSuccess(result.id, result.qrCode, data, false);
     } else {
-      setStatus('Erro: ' + (result.error || 'Falha ao salvar.'), 'error');
+      setStatus('Erro: ' + (result && result.error ? result.error : 'Falha ao salvar.'), 'error');
       document.getElementById('btn-salvar').disabled = false;
     }
-  } catch(err) {
+  }, function() {
     setStatus('Erro de conexão. Verifique a URL do script.', 'error');
     document.getElementById('btn-salvar').disabled = false;
-  }
+  });
+}
+
+function chamarScript(scriptUrl, data, onSuccess, onError) {
+  const cbName = 'cb_' + Date.now();
+  const timeout = setTimeout(function() {
+    delete window[cbName];
+    onError();
+  }, 10000);
+
+  window[cbName] = function(result) {
+    clearTimeout(timeout);
+    delete window[cbName];
+    onSuccess(result);
+  };
+
+  const script = document.createElement('script');
+  script.src = scriptUrl + '?callback=' + cbName + '&payload=' + encodeURIComponent(JSON.stringify(data));
+  script.onerror = function() {
+    clearTimeout(timeout);
+    delete window[cbName];
+    onError();
+  };
+  document.body.appendChild(script);
+  setTimeout(function() {
+    if (script.parentNode) script.parentNode.removeChild(script);
+  }, 11000);
 }
 
 function showSuccess(id, qrCode, data, isDemo) {
