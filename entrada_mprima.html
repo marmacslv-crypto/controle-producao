@@ -719,12 +719,8 @@ async function salvarEntrada() {
   document.getElementById('btn-salvar').disabled = true;
 
   try {
-    const resp = await fetch(scriptUrl, {
-      method: 'POST',
-      redirect: 'follow',
-      headers: {'Content-Type': 'text/plain'},
-      body: JSON.stringify(data)
-    });
+    const url = scriptUrl + '?payload=' + encodeURIComponent(JSON.stringify(data));
+    const resp = await fetch(url);
     const result = await resp.json();
 
     if (result.success) {
